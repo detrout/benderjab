@@ -17,16 +17,11 @@ def toJID(jid):
   else: 
     return jid
  
-def StepOn(conn):
-  """single step through the event loop"""
-  try:
-    conn.Process(1)
-    return 1
-  except KeyboardInterrupt:
-    return 0
-
 class BenderJab(object):
   """Base class for a simple jabber bot
+
+  self.parser = "an alternate command parser to use"
+  self.eventTasks = "list of things to do after an event timeout"
   """
   def __init__(self, jid, password=None, resource=None):
     """Initialize our core jabber options, prompting for password if needed
@@ -43,7 +38,7 @@ class BenderJab(object):
     self.password = password
 
     self.parser = None
-
+    self.eventTasks = []
   def messageCB(self, conn, msg):
     """Simple handling of messages
     """
@@ -106,16 +101,27 @@ class BenderJab(object):
 
     self.cl.sendInitPresence()
     return self.cl
- 
+
+  def eventStep(self, conn):
+    """single step through the event loop"""
+    try:
+      conn.Process(1)
+      for f in self.eventTasks:
+        f()
+      return 1
+    except KeyboardInterrupt:
+      return 0
+
+
   def eventLoop(self, timeout=None):
     """Loop forever (or until timeout)
     """
     if timeout is None:
-      while StepOn(self.cl):
+      while self.eventStep(self.cl):
         pass
     else:
       tstart = time.time()
-      while StepOn(self.cl) and timeout > 0:
+      while self.eventStep(self.cl) and timeout > 0:
         tnow = time.time()
         timeout -= (tnow - tstart)
         tstart = tnow
