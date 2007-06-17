@@ -32,7 +32,7 @@ class BenderJab(object):
     """Initialize our core jabber options, prompting for password if needed
     """
     if jid is None:
-      raise RuntimeError("Must have a jabber ID")
+      jid = raw_input("jabber id: ")
     if password is None:
       password = getpass("enter password: ")
     if resource is None:
