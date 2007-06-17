@@ -10,8 +10,6 @@ import types
 
 import xmpp
 
-import mypw
-
 def toJID(jid):
   """cast strings to a jabberid"""
   if type(jid) in types.StringTypes:
