@@ -16,7 +16,17 @@ def toJID(jid):
     return xmpp.protocol.JID(jid)
   else: 
     return jid
- 
+
+def check_getpass(prompt=None):
+  ok = False
+  while not ok:
+    pass1 = getpass(prompt)
+    pass2 = getpass(prompt)
+    if pass1 == pass2:
+      ok = True
+    else:
+      print "password mismatch, try again"
+
 def StepOn(conn):
   """single step through the event loop"""
   try:
@@ -104,7 +114,7 @@ def register(jid, email):
   if email is None:
     email = str(jid)
   prompt = "Password for ["+ jid +"]:"
-  passwd = getpass(prompt)
+  passwd = check_getpass(prompt)
   jid = toJID(jid)
 
   print "jid", jid, jid.getDomain()
@@ -117,10 +127,9 @@ def register(jid, email):
   
   handler = registerIqCB(jid.getNode(), passwd, email)
   cl.RegisterHandler('iq', handler, ns=registerIqCB.NS)
-
   handler.sendRegistrationRequest(cl)
 
-  while not handler.done:
+  for x in range(5):
     cl.Process(1)
 
   if handler.errorCode is not None:
@@ -128,7 +137,6 @@ def register(jid, email):
   
   cl.UnregisterHandler('iq', registerIqCB, ns=ns)
   return cl
-
 
 def test_logon(jid):
   prompt = "Password for ["+ jid +"]:"
