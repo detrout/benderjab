@@ -53,18 +53,21 @@ class BenderJab(object):
      
     if body is None:
       return
-    if self.parser is not None:
-      reply = self.parser(body)
-    else:
-      # some default commands
-      if re.match("help", body):
-        reply = "I'm sooo not helpful"
-      elif re.match("time", body):
-        reply = "Server time is "+time.asctime()
-      elif re.match("uptime", body):
-        reply = commands.getoutput("uptime")
+    try:
+      if self.parser is not None:
+        reply = self.parser(body)
       else:
-        reply = "I have no idea what \""+body+"\" means."
+        # some default commands
+        if re.match("help", body):
+          reply = "I'm sooo not helpful"
+        elif re.match("time", body):
+          reply = "Server time is "+time.asctime()
+        elif re.match("uptime", body):
+          reply = commands.getoutput("uptime")
+        else:
+          reply = "I have no idea what \""+body+"\" means."
+    except Exception, e:
+      reply = "failed: " + str(e)
 
     conn.send(xmpp.Message(to=who, typ='chat', body=reply))
 
