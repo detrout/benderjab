@@ -78,7 +78,7 @@ class BenderJab(object):
     auth_state = self.cl.auth(self.jid.getNode(), self.password, self.resource)
     if auth_state is None:
       # auth failed
-      print "couldn't authenticate", unicode(jid)
+      print "couldn't authenticate", unicode(self.jid)
       # probably want a better exception here
       raise RuntimeError(self.cl.lastErr)
 
