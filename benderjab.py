@@ -2,7 +2,9 @@
 
 import commands
 from getpass import getpass
+from optparse import OptionParser
 import re
+import sys
 import time
 import types
 
@@ -29,6 +31,8 @@ class BenderJab(object):
   def __init__(self, jid, password=None, resource=None):
     """Initialize our core jabber options, prompting for password if needed
     """
+    if jid is None:
+      raise RuntimeError("Must have a jabber ID")
     if password is None:
       password = getpass("enter password: ")
     if resource is None:
@@ -120,9 +124,20 @@ class BenderJab(object):
   def disconnect(self):
     self.cl.disconnect()
 
-def main():
-  jid = "bender@ghic.org"
-  bot = BenderJab(jid)
+def makeOptions():
+  parser = OptionParser()
+
+  parser.add_option('-j', '--jid', dest="jid",
+                    help="the jabber id we should connect as")
+  return parser
+
+def main(argv=None):
+  if argv is None:
+    argv = sys.argv
+  arg_parser = makeOptions()
+  opt, args = arg_parser.parse_args(argv)
+ 
+  bot = BenderJab(opt.jid)
   bot.logon()
   bot.eventLoop()
 
