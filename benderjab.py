@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 
+import commands
 from getpass import getpass
+import re
 import time
 import types
 
@@ -36,6 +38,8 @@ class BenderJab(object):
     self.resource = resource
     self.password = password
 
+    self.parser = None
+
   def messageCB(self, conn, msg):
     """Simple handling of messages
     """
@@ -49,13 +53,20 @@ class BenderJab(object):
      
     if body is None:
       return
-    if body[:4] == "help":
-      conn.send(xmpp.Message(to=who, typ='chat', body="no help here"))
-    elif body[:4] == "time":
-      conn.send(xmpp.Message(to=who, typ='chat',body=time.asctime() ))
+    if self.parser is not None:
+      reply = self.parser(body)
     else:
-      conn.send(xmpp.Message(to=who, typ='chat',
-                             body="I have no idea what \""+body+"\" means."))
+      # some default commands
+      if re.match("help", body):
+        reply = "I'm sooo not helpful"
+      elif re.match("time", body):
+        reply = "Server time is "+time.asctime()
+      elif re.match("uptime", body):
+        reply = commands.getoutput("uptime")
+      else:
+        reply = "I have no idea what \""+body+"\" means."
+
+    conn.send(xmpp.Message(to=who, typ='chat', body=reply))
 
   def presenceCB(self, conn, msg):
     print "from pres:", msg.getFrom(), msg.getStatus()
@@ -96,8 +107,11 @@ class BenderJab(object):
       while StepOn(self.cl):
         pass
     else:
+      tstart = time.time()
       while StepOn(self.cl) and timeout > 0:
-        timeout -= 1
+        tnow = time.time()
+        timeout -= (tnow - tstart)
+        tstart = tnow
     return
 
   def disconnect(self):
