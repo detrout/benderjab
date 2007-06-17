@@ -39,20 +39,23 @@ class BenderJab(object):
   def messageCB(self, conn, msg):
     """Simple handling of messages
     """
-    print "DEBUG:", str(msg)
+    print u"DEBUG:", unicode(msg)
     who = msg.getFrom()
-    print "Sender:", str(who)
+    print u"Sender:", unicode(who)
 
     body = msg.getBody()
-    print "Content:", str(body)
+    print u"Content:", unicode(body)
 
      
     if body is None:
       return
     if body[:4] == "help":
       conn.send(xmpp.Message(to=who, typ='chat', body="no help here"))
-    if body[:4] == "time":
+    elif body[:4] == "time":
       conn.send(xmpp.Message(to=who, typ='chat',body=time.asctime() ))
+    else:
+      conn.send(xmpp.Message(to=who, typ='chat',
+                             body="I have no idea what \""+body+"\" means."))
 
   def presenceCB(self, conn, msg):
     print "from pres:", msg.getFrom(), msg.getStatus()
@@ -75,7 +78,7 @@ class BenderJab(object):
     auth_state = self.cl.auth(self.jid.getNode(), self.password, self.resource)
     if auth_state is None:
       # auth failed
-      print "couldn't authenticate", str(jid)
+      print "couldn't authenticate", unicode(jid)
       # probably want a better exception here
       raise RuntimeError(self.cl.lastErr)
 
@@ -101,7 +104,7 @@ class BenderJab(object):
     self.cl.disconnect()
 
 def main():
-  jid = "jumpgate@chaos.caltech.edu"
+  jid = "bender@ghic.org"
   bot = BenderJab(jid)
   bot.logon()
   bot.eventLoop()
