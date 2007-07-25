@@ -39,6 +39,7 @@ class BenderJab(object):
 
     self.parser = None
     self.eventTasks = []
+
   def messageCB(self, conn, msg):
     """Simple handling of messages
     """
