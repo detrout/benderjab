@@ -8,8 +8,6 @@ from getpass import getpass
 from optparse import OptionParser
 import os
 import sys
-import signal
-import time
 import types
 
 import xmpp
