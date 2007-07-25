@@ -1,8 +1,6 @@
 #!/usr/bin/env python
-# $Id: xsend.py,v 1.1 2004/06/20 09:45:09 snakeru Exp $
 import sys,os,xmpp
-import ConfigParser
-
+from .util import get_config
 
 def send(tojid, text, profile='DEFAULT'):
   """Quickly send a jabber message tojid
