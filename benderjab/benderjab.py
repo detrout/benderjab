@@ -28,7 +28,8 @@ class BenderJab(object):
     self.jid = toJID(jid)
     self.resource = resource
     self.password = password
-
+    # number of seconds to wait in each poll step
+    self.timeout = 1
     self.parser = self._parser
     self.eventTasks = []
 
@@ -105,13 +106,12 @@ class BenderJab(object):
   def eventStep(self, conn):
     """single step through the event loop"""
     try:
-      conn.Process(1)
+      conn.Process(self.timeout)
       for f in self.eventTasks:
-        f()
+        f(self)
       return 1
     except KeyboardInterrupt:
       return 0
-
 
   def eventLoop(self, timeout=None):
     """Loop forever (or until timeout)
