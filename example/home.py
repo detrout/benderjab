@@ -3,7 +3,7 @@
 import re
 import sys
 
-from benderjab import BenderJab
+from benderjab.benderjab import BenderJab
 
 # this came from the pyparsing wiki http://pyparsing.wikispaces.com/Examples
 # slightly modified
