@@ -1,5 +1,9 @@
 #!/usr/bin/env python
+"""
+This module handles implementing jabber in-band registration XEP-0077
 
+http://www.xmpp.org/extensions/xep-0077.html
+"""
 from getpass import getpass
 from optparse import OptionParser
 import os
@@ -9,36 +13,7 @@ import time
 import types
 
 import xmpp
-
-def toJID(jid):
-  """cast strings to a jabberid"""
-  if type(jid) in types.StringTypes:
-    return xmpp.protocol.JID(jid)
-  else: 
-    return jid
-
-def check_getpass(prompt=None):
-  ok = False
-  while not ok:
-    pass1 = getpass(prompt)
-    pass2 = getpass(prompt)
-    if pass1 == pass2:
-      ok = True
-    else:
-      print "password mismatch, try again"
-
-def StepOn(conn):
-  """single step through the event loop"""
-  try:
-    conn.Process(1)
-    return 1
-  except KeyboardInterrupt:
-    return 0
-
-def GoOn(conn):
-  """continue running the event loop"""
-  while StepOn(conn):
-    pass
+from util import get_checked_password, toJID
 
 def messageCB(conn, msg):
   print "Sender:", str(msg.getFrom())
@@ -53,98 +28,70 @@ def presenceCB(conn, msg):
     conn.send(xmpp.Presence(to=who, typ='subscribed'))
     conn.send(xmpp.Presence(to=who, typ='subscribe'))
 
-class registerIqCB:
-  NS = 'jabber:iq:register'
-  def __init__(self, username, password, email):
-    self.username = username
-    self.password = password
-    self.email = email
-    self.messages = []
 
-    self.registered = False
-    self.done = False
-
-    self.error = None
-    self.errorCode = None
-
-  def sendRegistrationRequest(self, conn):
-    # build our initial registration request
-    iq = xmpp.Iq()
-    iq.setType('get')
-    iq.setQueryNS(self.NS)
-    conn.send(iq)
-
-  def sendRegistrationDetails(self, conn):
-    iq = xmpp.Iq(typ="set",xmlns=None)
-    iq.setQueryNS(self.NS)
-    query = iq.getPayload()[0]
-    query.addChild('username',payload=self.username)
-    query.addChild('password',payload=self.password)
-    query.addChild('email',payload=self.email)
-    print "send", str(iq)
-    conn.send(iq)
-    print
-    self.registered = True
-
-  def getPayloadTag(msg, name):
-    """recursively look through the message for the specified tag
-    """
-    for element in msg.getPayload():
-      tag = element.getTags(name)
-      if tags is not None:
-        return tag
-    return None
-
-  def __call__(self, conn, msg):
-    print "msg:", str(msg)
-    self.messages.append(msg)
- 
-    if msg.getErrorCode() is not None:
-      self.error = msg.getError()
-      self.errorCode = msg.getErrorCode()
-      self.done = True
-
-    if not self.registered:
-      self.sendRegistrationDetails(conn)
-
-    if len(msg.getPayload()) == 0:
-      self.done = True
-
-def register(jid, email):
-  if email is None:
-    email = str(jid)
-  prompt = "Password for ["+ jid +"]:"
-  passwd = check_getpass(prompt)
-  jid = toJID(jid)
-
-  print "jid", jid, jid.getDomain()
+def connect(jid):
+  """Connect to jabber server for the specified JID
+  """
   cl = xmpp.Client(jid.getDomain(), debug=[])
   cl.connect(use_srv=False)
   if cl.isConnected() is None:
-    print "Unable to connect to server", jid.getDomain()
     print cl.lastErr
-    return 1
-  
-  handler = registerIqCB(jid.getNode(), passwd, email)
-  cl.RegisterHandler('iq', handler, ns=registerIqCB.NS)
-  handler.sendRegistrationRequest(cl)
-
-  for x in range(5):
-    cl.Process(1)
-
-  if handler.errorCode is not None:
-    print "Error["+handler.errorCode+"]", handler.error
-  
-  cl.UnregisterHandler('iq', registerIqCB, ns=ns)
+    raise RuntimeError("Unable to connect to server" + jid.getDomain())
   return cl
+
+def register(jid, email=None, passwd=None):
+  if email is None:
+    email = str(jid)
+  if passwd is None:
+    prompt = "Password for ["+ str(jid) +"]:"
+    passwd = get_checked_password(prompt)
+  jid = toJID(jid)
+
+  cl = connect(jid)
+  iq = xmpp.Iq(typ='get')
+  iq.addChild('query', namespace=xmpp.NS_REGISTER)
+  ready = cl.SendAndWaitForResponse(iq)
+  if ready.getErrorCode() is not None:
+    raise RuntimeError(ready.getError())
+
+  # send registration data
+  iq = xmpp.Iq(typ='set')
+  query = iq.addChild('query', namespace=xmpp.NS_REGISTER)
+  query.addChild('username',payload=jid.getNode())
+  query.addChild('password',payload=passwd)
+  query.addChild('email',payload=email)
+  register = cl.SendAndWaitForResponse(iq)
+  if register.getErrorCode() is not None:
+    raise RuntimeError(register.getError())
+
+  return register
+
+def unregister(jid, password=None):
+  """Try to unregister a JID"""
+  jid = toJID(jid)
+  if password is None:
+    prompt = "Password for ["+ str(jid) +"]:"
+    passwd = getpass(prompt)
+
+  cl = connect(jid)
+  if cl.auth(jid.getNode(), passwd, "testing") is None:
+    raise RuntimeError("Couldn't authenticate "+str(cl.lastErr))
+
+  # XEP-0077 seems to suggest to should be user id
+  # but the jabberd 1.4 faq says it should be the server name
+  iq = xmpp.Iq(typ='set', to=jid.getDomain())
+  query = iq.addChild('query', namespace=xmpp.NS_REGISTER)
+  query.addChild('remove')
+  response = cl.SendAndWaitForResponse(iq)
+  if response.getErrorCode() is not None:
+    raise RuntimeError(response.getError())
 
 def test_logon(jid):
   prompt = "Password for ["+ jid +"]:"
   passwd = getpass(prompt)
   jid = toJID(jid)
 
-  cl = xmpp.Client(jid.getDomain(), debug=[])
-  cl.connect(use_srv=False)
+  cl = connect(jid)
 
   if cl.auth(jid.getNode(), passwd, "testing") is None:
     print "Couldn't authenticate", cl.lastErr
@@ -189,6 +136,7 @@ def main(argv=None):
     register(opt.register_jid, opt.email)
   if opt.unregister_jid is not None:
     if opt.verbose: print "unregister", opt.unregister_jid
+    unregister(opt.unregister_jid)
   if opt.test_jid is not None:
     if opt.verbose: print "test", opt.test_jid
     test_logon(opt.test_jid)
