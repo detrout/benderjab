@@ -20,8 +20,7 @@ def toJID(jid):
 class BenderJab(object):
   """Base class for a simple jabber bot
 
-  self.parser = "an alternate command parser to use"
-  self.eventTasks = "list of things to do after an event timeout"
+  self.eventTasks - list of things to do after an event timeout
   """
   def __init__(self, jid, password=None, resource=None):
     """Initialize our core jabber options, prompting for password if needed
@@ -37,47 +36,50 @@ class BenderJab(object):
     self.resource = resource
     self.password = password
 
-    self.parser = None
+    self.parser = self._parser
     self.eventTasks = []
 
   def messageCB(self, conn, msg):
     """Simple handling of messages
     """
-    print u"DEBUG:", unicode(msg)
     who = msg.getFrom()
-    print u"Sender:", unicode(who)
-
     body = msg.getBody()
-    print u"Content:", unicode(body)
-
      
     if body is None:
       return
     try:
-      if self.parser is not None:
-        reply = self.parser(body)
-      else:
-        # some default commands
-        if re.match("help", body):
-          reply = "I'm sooo not helpful"
-        elif re.match("time", body):
-          reply = "Server time is "+time.asctime()
-        elif re.match("uptime", body):
-          reply = commands.getoutput("uptime")
-        else:
-          reply = "I have no idea what \""+body+"\" means."
+      reply = self.parser(body, who)
     except Exception, e:
       reply = "failed: " + str(e)
+      print e
 
     conn.send(xmpp.Message(to=who, typ='chat', body=reply))
 
+  def _parser(self, message, who):
+    """Default parser function, 
+    overide this or replace self.parser with a different function
+    to do something more useful
+    """
+    # some default commands
+    if re.match("help", message):
+      reply = "I'm sooo not helpful"
+    elif re.match("time", message):
+      reply = "Server time is "+time.asctime()
+    elif re.match("uptime", message):
+      reply = commands.getoutput("uptime")
+    else:
+      reply = "I have no idea what \""+message+"\" means."
+    return reply
+
   def presenceCB(self, conn, msg):
-    print "from pres:", msg.getFrom(), msg.getStatus()
     presence_type = msg.getType()
     who = msg.getFrom()
     if presence_type == "subscribe":
+      # Tell the server that we accept their subscription request
       conn.send(xmpp.Presence(to=who, typ='subscribed'))
+      # Ask to be their contact too
       conn.send(xmpp.Presence(to=who, typ='subscribe'))
+      # Be friendly
       conn.send(xmpp.Message(who, "hi " + who.getNode()))
     elif presence_type == "unsubscribe":
       conn.send(xmpp.Message(who, "bye " + who.getNode()))
@@ -87,6 +89,8 @@ class BenderJab(object):
   def logon(self):
     """connect to server"""
     self.cl = xmpp.Client(self.jid.getDomain(), debug=[])
+    # if you have dnspython installed and use_srv is True
+    # the dns service discovery lookup seems to fail.
     self.cl.connect(use_srv=False)
 
     auth_state = self.cl.auth(self.jid.getNode(), self.password, self.resource)
@@ -96,11 +100,13 @@ class BenderJab(object):
       # probably want a better exception here
       raise RuntimeError(self.cl.lastErr)
 
-    # we want to do stuff 
+    # tell the xmpp client that we're ready to handle things
     self.cl.RegisterHandler('message', self.messageCB)
     self.cl.RegisterHandler('presence', self.presenceCB)
 
+    # announce our existence to the server
     self.cl.sendInitPresence()
+    # not needed but lets me muck around with the client from interpreter
     return self.cl
 
   def eventStep(self, conn):
