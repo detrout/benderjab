@@ -9,13 +9,7 @@ import time
 import types
 
 import xmpp
-
-def toJID(jid):
-  """cast strings to a jabberid"""
-  if type(jid) in types.StringTypes:
-    return xmpp.protocol.JID(jid)
-  else: 
-    return jid
+from .util import toJID, get_password, get_config
  
 class BenderJab(object):
   """Base class for a simple jabber bot
@@ -27,8 +21,7 @@ class BenderJab(object):
     """
     if jid is None:
       jid = raw_input("jabber id: ")
-    if password is None:
-      password = getpass("enter password: ")
+    password = get_password(jid, password)
     if resource is None:
       resource = "BenderJab"
 

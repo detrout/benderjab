@@ -19,22 +19,38 @@ def toJID(jid):
   else: 
     return jid
 
-def get_checked_password(prompt="password> "):
+def get_checked_password(jid, password=None):
   """
   Prompt for a password twice and make sure they match
 
   :Parameters:
     - `prompt`: the string to display to the user
   """
-  ok = False
-  while not ok:
-    pass1 = getpass(prompt)
-    pass2 = getpass(prompt)
-    if pass1 == pass2:
-      ok = True
-    else:
-      print "password mismatch, try again"
-  return pass1
+  prompt = "Password for ["+ str(jid) +"]:"
+  if password is None:
+    ok = False
+    while not ok:
+      password = getpass(prompt)
+      password2 = getpass(prompt)
+      if password == password2:
+        ok = True
+      else:
+        print "password mismatch, try again"
+  return password
+
+def get_password(jid, password=None):
+  """
+  Convience function to ask for a password with a nice prompt, if one is needed
+
+  :Parameters:
+    - `jid`: which jabber ID to ask for a password for
+    - `password`: pass in a potential passsword, if its not none
+                  we wont do anything.
+  """
+  if password is None:
+    prompt = "Password for ["+ str(jid) +"]:"
+    password = getpass(prompt)
+  return password
 
 def get_config(profile='DEFAULT', filename='~/.benderjab'):
   """Read config file, returning the specified section

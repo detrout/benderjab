@@ -11,21 +11,7 @@ import sys
 import types
 
 import xmpp
-from util import get_checked_password, toJID
-
-def messageCB(conn, msg):
-  print "Sender:", str(msg.getFrom())
-  print "Content:", str(msg.getBody())
-  print msg
-
-def presenceCB(conn, msg):
-  print "from:", msg.getFrom(), msg.getStatus()
-  presence_type = msg.getType()
-  who = msg.getFrom()
-  if presence_type == "subscribe":
-    conn.send(xmpp.Presence(to=who, typ='subscribed'))
-    conn.send(xmpp.Presence(to=who, typ='subscribe'))
-
+from util import get_checked_password, get_password, toJID
 
 def connect(jid):
   """Connect to jabber server for the specified JID
@@ -37,12 +23,10 @@ def connect(jid):
     raise RuntimeError("Unable to connect to server" + jid.getDomain())
   return cl
 
-def register(jid, email=None, passwd=None):
+def register(jid, email=None, password=None):
   if email is None:
     email = str(jid)
-  if passwd is None:
-    prompt = "Password for ["+ str(jid) +"]:"
-    passwd = get_checked_password(prompt)
+  password = get_checked_password(jid, password)
   jid = toJID(jid)
 
   cl = connect(jid)
@@ -56,7 +40,7 @@ def register(jid, email=None, passwd=None):
   iq = xmpp.Iq(typ='set')
   query = iq.addChild('query', namespace=xmpp.NS_REGISTER)
   query.addChild('username',payload=jid.getNode())
-  query.addChild('password',payload=passwd)
+  query.addChild('password',payload=password)
   query.addChild('email',payload=email)
   register = cl.SendAndWaitForResponse(iq)
   if register.getErrorCode() is not None:
@@ -67,12 +51,10 @@ def register(jid, email=None, passwd=None):
 def unregister(jid, password=None):
   """Try to unregister a JID"""
   jid = toJID(jid)
-  if password is None:
-    prompt = "Password for ["+ str(jid) +"]:"
-    passwd = getpass(prompt)
+  password = get_password(jid, password)
 
   cl = connect(jid)
-  if cl.auth(jid.getNode(), passwd, "testing") is None:
+  if cl.auth(jid.getNode(), password, "testing") is None:
     raise RuntimeError("Couldn't authenticate "+str(cl.lastErr))
 
   # XEP-0077 seems to suggest to should be user id
@@ -86,20 +68,15 @@ def unregister(jid, password=None):
 
 def test_logon(jid):
   prompt = "Password for ["+ jid +"]:"
-  passwd = getpass(prompt)
+  password = getpass(prompt)
   jid = toJID(jid)
 
   cl = connect(jid)
 
-  if cl.auth(jid.getNode(), passwd, "testing") is None:
+  if cl.auth(jid.getNode(), password, "testing") is None:
     print "Couldn't authenticate", cl.lastErr
 
-  cl.RegisterHandler('message', messageCB)
-  cl.RegisterHandler('presence', presenceCB)
-
   cl.sendInitPresence()
-  for x in range(5):
-    StepOn(cl)
   return cl
 
 def makeOptionParser():
