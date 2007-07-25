@@ -130,6 +130,12 @@ class BenderJab(object):
   def disconnect(self):
     self.cl.disconnect()
 
+def BenderFactory(profile, filename='~/.benderjab'):
+  """Use the config parser to get our login credentials
+  """
+  jidparams = get_config(profile)
+  return BenderJab(**jidparams)
+
 def makeOptions():
   parser = OptionParser()
 
