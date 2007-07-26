@@ -26,7 +26,7 @@ def get_checked_password(jid, password=None):
   :Parameters:
     - `prompt`: the string to display to the user
   """
-  prompt = "Password for ["+ str(jid) +"]:"
+  prompt = u"Password for ["+ unicode(jid) +"]:"
   if password is None:
     ok = False
     while not ok:
@@ -48,7 +48,7 @@ def get_password(jid, password=None):
                   we wont do anything.
   """
   if password is None:
-    prompt = "Password for ["+ str(jid) +"]:"
+    prompt = u"Password for ["+ unicode(jid) +"]:"
     password = getpass(prompt)
   return password
 
