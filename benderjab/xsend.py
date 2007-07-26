@@ -29,6 +29,7 @@ def send(tojid, text, profile='DEFAULT'):
   if cl.auth(jid.getNode(),jidparams['password'], 'xsend') is None:
     print "Couldn't auth", cl.lastErr
   else:
+    # we logged in, so we can send a message
     cl.send(xmpp.protocol.Message(tojid,text))
 
   # hang up politely
@@ -42,6 +43,7 @@ def main(args=None):
     print "Syntax: xsend JID text"
     return 1
 
+  # parse command line arguments
   tojid=args[1]
   text=' '.join(args[2:])
   send(tojid, text)

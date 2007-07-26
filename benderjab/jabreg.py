@@ -24,19 +24,37 @@ def connect(jid):
   return cl
 
 def register(jid, email=None, password=None):
+  """
+  Register a new jabber ID
+  """
   if email is None:
     email = str(jid)
   password = get_checked_password(jid, password)
   jid = toJID(jid)
 
+  # connect to server
   cl = connect(jid)
+
+  # ask the server to start the registration process
+  # http://www.xmpp.org/extensions/xep-0077.html#usecases-register
+  # <iq type='get' id='reg1'>  <query xmlns='jabber:iq:register'/> </iq>
   iq = xmpp.Iq(typ='get')
   iq.addChild('query', namespace=xmpp.NS_REGISTER)
   ready = cl.SendAndWaitForResponse(iq)
+
+  # just check for an error response
   if ready.getErrorCode() is not None:
     raise RuntimeError(ready.getError())
 
-  # send registration data
+  # send registration data (something like...)
+  # <iq type='result' id='reg1'>
+  #   <query xmlns='jabber:iq:register'>
+  #    <registered/>
+  #    <username>juliet</username>
+  #    <password>R0m30</password>
+  #    <email>juliet@capulet.com</email>
+  #  </query>
+  # </iq>
   iq = xmpp.Iq(typ='set')
   query = iq.addChild('query', namespace=xmpp.NS_REGISTER)
   query.addChild('username',payload=jid.getNode())
