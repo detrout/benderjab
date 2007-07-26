@@ -1,4 +1,8 @@
 #!/usr/bin/env python
+#
+# Copyright 2007 Diane Trout
+# This software is covered by the GNU Lesser Public License 2.1
+#
 """
 This module handles implementing jabber in-band registration XEP-0077
 
