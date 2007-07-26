@@ -17,7 +17,7 @@ def parse_uptime(loadavg):
   """
   loadavg = read_linux_uptime().split()
   one = float(loadavg[0])
-  five = flaot(loadavg[1])
+  five = float(loadavg[1])
   fifteen = float(loadavg[2])
   process = loadavg[3]
   return (one,five,fifteen,process)
@@ -26,7 +26,7 @@ def parser(message, who=None):
   reply = ""
   try:
     if re.match("uptime", message):
-      reply = parse_uptime(read_linux_uptime())
+      reply = read_linux_uptime()
     elif re.match("time", message):
       reply = "Server time is "+time.asctime()
     else:
@@ -50,21 +50,21 @@ class update_presence(object):
       presence = 'away'
     else:
       presence = ''
-    if self.presence != presence
+    print "presence:", presence, one
+    if self.presence != presence:
       self.presence = presence
-      bot.cl.send(xmpp.Presence(typ=presence, show=loadavg))
+      bot.cl.send(xmpp.Presence(show=presence, status=loadavg))
 
 def main(args=None):
-  if len(args > 1):
+  if args is not None and len(args) > 1:
     bot = BenderFactory(args[1])
   else:
     bot = BenderFactory()
 
   # lets not overload already overloaded systems, wait 5 seconds between
   # updates
-  bot.timeout = 5
   bot.parser = parser
-  bot.eventTasks.append(update_presence)
+  bot.eventTasks.append(update_presence())
   bot.logon()
   bot.eventLoop()
   return 0
