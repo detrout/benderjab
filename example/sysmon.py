@@ -50,7 +50,6 @@ class update_presence(object):
       presence = 'away'
     else:
       presence = ''
-    print "presence:", presence, one
     if self.presence != presence:
       self.presence = presence
       bot.cl.send(xmpp.Presence(show=presence, status=loadavg))
