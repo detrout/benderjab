@@ -68,6 +68,9 @@ class BenderJab(object):
   def presenceCB(self, conn, msg):
     presence_type = msg.getType()
     who = msg.getFrom()
+    # This code provides for a fairly promiscous bot
+    # a more secure bot should check an auth list and accept deny
+    # based on the incoming who JID
     if presence_type == "subscribe":
       # Tell the server that we accept their subscription request
       conn.send(xmpp.Presence(to=who, typ='subscribed'))

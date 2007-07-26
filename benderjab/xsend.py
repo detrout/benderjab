@@ -11,20 +11,27 @@ def send(tojid, text, profile='DEFAULT'):
     - `profile`: which set of credentials to use from the config file
   """
   jidparams = get_config(profile)
+  # if we have no credentials, don't bother logging in
   if jidparams is None:
     return
 
   jid=xmpp.protocol.JID(jidparams['jid'])
+  # construct a client instance, logging into the JIDs servername
+  # xmpp's default debug didn't work when I started using it
   cl=xmpp.Client(jid.getDomain(),debug=[])
 
+  # if use_srv is true, xmpp will try to use dnspython to look up
+  # the right server via a DNS SRV request, this doesn't work right
+  # for my server
   cl.connect(use_srv=False)
 
-  if not cl.auth(jid.getNode(),jidparams['password'], 'xsend'):
+  # try logging in
+  if cl.auth(jid.getNode(),jidparams['password'], 'xsend') is None:
     print "Couldn't auth", cl.lastErr
   else:
-    #cl.SendInitialPresence()
     cl.send(xmpp.protocol.Message(tojid,text))
 
+  # hang up politely
   cl.disconnect()
 
 def main(args=None):
