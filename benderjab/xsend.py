@@ -6,7 +6,7 @@
 import sys,os,xmpp
 from .util import get_config
 
-def send(tojid, text, profile='DEFAULT'):
+def send(tojid, text, profile=None):
   """Quickly send a jabber message tojid
 
   :Parameters:

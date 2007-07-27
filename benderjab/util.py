@@ -5,6 +5,7 @@
 import ConfigParser
 from getpass import getpass
 import os
+import socket
 import types
 
 import xmpp
@@ -56,7 +57,7 @@ def get_password(jid, password=None):
     password = getpass(prompt)
   return password
 
-def get_config(profile='DEFAULT', filename='~/.benderjab'):
+def get_config(profile=None, filename='~/.benderjab'):
   """Read config file, returning the specified section
 
   Also creates the file if it doesn't exist.
@@ -65,14 +66,22 @@ def get_config(profile='DEFAULT', filename='~/.benderjab'):
     - `profile`: which section of the config file to return
   """
   config_file = os.path.expanduser(filename)
-  jidparams={'jid':'romeo@montague.net','password':'juliet'}
-  config = ConfigParser.RawConfigParser(jidparams)
+  default={'jid':'romeo@montague.net','password':'juliet'}
+  config = ConfigParser.RawConfigParser(default)
   if not os.access(config_file,os.R_OK):
     config.write(open(config_file,'w'))
+  else:
+    config.read(config_file)
+
+  if profile is None:
+    profile = socket.gethostname()
+    if not config.has_section(profile):
+      profile = 'DEFAULT'
+
+  jidparams = dict(config.items(profile))
+  if jidparams == default: 
     print "Please edit",filename,"to include a valid JID for sending messages"
     return None
   
-  config.read(config_file)
-  jidparams = dict(config.items(profile))
   return jidparams
 
