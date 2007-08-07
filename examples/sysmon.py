@@ -7,7 +7,7 @@ import re
 import sys
 import xmpp
 
-from benderjab.benderjab import BenderFactory
+from benderjab.bot import BenderFactory
 
 def read_linux_uptime():
   """So I don't have to keep retyping /proc/loadavg

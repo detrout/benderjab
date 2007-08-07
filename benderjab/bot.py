@@ -12,7 +12,7 @@ import time
 import types
 
 import xmpp
-from .util import toJID, get_password, get_config
+from util import toJID, get_password, get_config
  
 class BenderJab(object):
   """Base class for a simple jabber bot

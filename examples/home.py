@@ -6,7 +6,7 @@
 import re
 import sys
 
-from benderjab.benderjab import BenderJab
+from benderjab.bot import BenderJab
 
 # this came from the pyparsing wiki http://pyparsing.wikispaces.com/Examples
 # slightly modified

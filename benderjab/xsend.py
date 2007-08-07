@@ -4,7 +4,7 @@
 # This software is covered by the GNU Lesser Public License 2.1
 #
 import sys,os,xmpp
-from .util import get_config
+from util import get_config
 
 def send(tojid, text, profile=None):
   """Quickly send a jabber message tojid
