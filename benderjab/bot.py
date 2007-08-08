@@ -80,9 +80,9 @@ class BenderJab(object):
       # Ask to be their contact too
       conn.send(xmpp.Presence(to=who, typ='subscribe'))
       # Be friendly
-      conn.send(xmpp.Message(who, "hi " + who.getNode()))
+      conn.send(xmpp.Message(who, "hi " + who.getNode(), typ='chat'))
     elif presence_type == "unsubscribe":
-      conn.send(xmpp.Message(who, "bye " + who.getNode()))
+      conn.send(xmpp.Message(who, "bye " + who.getNode(), typ='chat'))
       conn.send(xmpp.Presence(to=who, typ='unsubscribed'))
       conn.send(xmpp.Presence(to=who, typ='unsubscribe'))
 
