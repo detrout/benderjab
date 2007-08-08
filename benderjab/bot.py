@@ -112,7 +112,9 @@ class BenderJab(object):
   def eventStep(self, conn):
     """single step through the event loop"""
     try:
-      conn.Process(self.timeout)
+      state = conn.Process(self.timeout)
+      if state is None:
+        self.logon()
       for f in self.eventTasks:
         f(self)
       return 1
