@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<aiml version="1.0">
+  <category>
+    <pattern>LOAD AIML B</pattern>
+    <template>loaded</template>
+  </category>
+  <category>
+    <!-- What you have to use upper case? That's LAME -->
+    <!-- if you match this -->
+    <pattern>HELLO</pattern>
+    <!-- the bot responds with -->
+    <template>hello to you too</template>
+  </category>
+  
+  <category>
+    <!-- this matches anything -->
+    <pattern>*</pattern>
+    <template>
+      <!-- and returns a random response -->
+      <random>
+        <!-- star refers to whatever the star matched -->
+        <li>bleem <star/></li>
+        <li>miserable <star/></li>
+        <li>venchent <star/></li>
+      </random>
+    </template>
+  </category>
+</aiml>
