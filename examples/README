@@ -1,0 +1,19 @@
+Read Me
+-------
+
+This directory contains a few examples of bots using the BenderJab bot 
+framework.
+
+aimlbot - calls PyAIML to come up with witty responses
+          the bot class is a bit more complex to make it easy to
+          call the read_eval_loop from an interpreter to fairly 
+          easily try to debug your AIML files.
+
+roller - uses pyparsing to figure out a fairly complete gamer
+         die rolling language (e.g. 2d10 )
+
+sysmon - gives a hint of how the framework could be used for system
+         administration tasks. It tells what your current load average is
+         and will change the away status when the load average goes over 5.
+
+time_delay - sends you a message after N seconds have passed.
