@@ -65,23 +65,36 @@ def get_config(profile=None, filename='~/.benderjab'):
   :Parameters:
     - `profile`: which section of the config file to return
   """
-  config_file = os.path.expanduser(filename)
   default={'jid':'romeo@montague.net','password':'juliet'}
-  config = ConfigParser.RawConfigParser(default)
-  if not os.access(config_file,os.R_OK):
-    config.write(open(config_file,'w'))
+  config = ConfigParser.RawConfigParser()
+
+  if type(filename) in types.StringTypes:
+    config_file = os.path.expanduser(filename)
+    if not os.access(config_file,os.R_OK):
+      # make a default file and exit
+      config = ConfigParser.RawConfigParser(default)
+      config.write(open(config_file,'w'))
+      print "Please edit",filename,"to include a valid JID for sending messages"
+      return None
+    else:
+      config.read(config_file)
   else:
-    config.read(config_file)
+    # (Well its not really a filename at this point)
+    config.readfp(filename)
 
+  # Grab stuff out of default
+  params = {}
+  params.update( dict(config.items('default')) )
+
+  # then lets see if we have a hostname specific group
   if profile is None:
-    profile = socket.gethostname()
-    if not config.has_section(profile):
-      profile = 'DEFAULT'
+    hostname = socket.gethostname()
+    if config.has_section(hostname):
+      params.update( dict(config.items( socket.gethostname() )))
 
-  jidparams = dict(config.items(profile))
-  if jidparams == default: 
+  if params == default:
     print "Please edit",filename,"to include a valid JID for sending messages"
     return None
   
-  return jidparams
+  return params
 
