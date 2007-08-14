@@ -84,7 +84,8 @@ def get_config(profile=None, filename='~/.benderjab'):
 
   # Grab stuff out of default
   params = {}
-  params.update( dict(config.items('default')) )
+  if config.has_section('default'):
+    params.update( dict(config.items('default')) )
 
   # then lets see if we have a hostname specific group
   if profile is None:
