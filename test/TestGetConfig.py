@@ -16,6 +16,15 @@ password: badpassword
     self.failUnless(d['jid'] == 'name@server.tld')
     self.failUnless(d['password'] == 'badpassword')
 
+  def testNoDefault(self):
+    cfg = StringIO("""[%s]
+jid: name@server.tld
+password: badpassword
+""" % (socket.gethostname()))
+    d = get_config(None, cfg)
+    self.failUnless( hasattr(d, '__getitem__') )
+    self.failUnless(d['jid'] == 'name@server.tld')
+    self.failUnless(d['password'] == 'badpassword')
   def testHostname(self):
     hostname = socket.gethostname()
     cfg = StringIO("""[default]
