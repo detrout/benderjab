@@ -3,7 +3,13 @@
 # Copyright 2007 Diane Trout
 # This software is covered by the GNU Lesser Public License 2.1
 #
-import sys,os,xmpp
+import os
+import random
+import sys
+import time
+
+import xmpp
+
 from util import get_config
 
 def send(tojid, text, profile=None):
@@ -24,10 +30,23 @@ def send(tojid, text, profile=None):
   # xmpp's default debug didn't work when I started using it
   cl=xmpp.Client(jid.getDomain(),debug=[])
 
+  connection_type = ''
+  connection_tries = 3
+
   # if use_srv is true, xmpp will try to use dnspython to look up
   # the right server via a DNS SRV request, this doesn't work right
   # for my server
-  cl.connect(use_srv=False)
+
+  while connection_type == '' and connection_tries > 0:
+    connection_type = cl.connect(use_srv=False)
+    # wait a random length of time between 2.5 and 7.5 seconds
+    # if we didn't manage to connect
+    if connection_type == '':
+      time.sleep( 5 + (random.random()*5 - 2.5))
+
+  if connection_type == '':
+    raise IOError("unable to connect to" + str(cl.Server))
+    
 
   # try logging in
   if cl.auth(jid.getNode(),jidparams['password'], 'xsend') is None:
