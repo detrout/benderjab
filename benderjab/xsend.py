@@ -7,8 +7,10 @@ import os
 import random
 import sys
 import time
+import xmlrpclib
 
 import xmpp
+from xmpp import simplexml
 
 from util import get_config, toJID
 
@@ -52,7 +54,7 @@ def connect(profile=None):
   
 def send(tojid, text, profile=None):
   """Quickly send a jabber message tojid
-
+  
   :Parameters:
     - `tojid`: The Jabber ID to send to
     - `text`: a string containing the message to send
@@ -68,6 +70,33 @@ def send(tojid, text, profile=None):
   # hang up politely
   cl.disconnect()
 
+def xmlrpc_send(conn, tojid, params, methodname=None, encoding=None):
+    """
+    Send an xml-rpc message via jabber 
+    
+    JEP-009 http://www.xmpp.org/extensions/xep-0009.html
+    """      
+    theirjid = toJID(tojid)
+    
+    call_xml = xmlrpclib.dumps(params, methodname, encoding)
+    call_node = simplexml.XML2Node(call_xml)
+    
+    iq = xmpp.Iq(typ='set', to=theirjid, xmlns=None)
+    query = iq.addChild('query', namespace=xmpp.NS_RPC)
+    query.addChild(node=call_node)
+    print str(iq)
+    msg_id = conn.send(iq)
+    return msg_id
+    
+def xmlrpc_recv(conn, msgid):
+  msg = conn.WaitForResponse(msgid)
+  return msg
+
+def xmlrpc_call(conn, tojid, params, methodname=None, encoding=None):
+  msgid = xmlrpc_send(conn,tojid, params, methodname, encoding)
+  reply_iq = xmlrpc_recv(conn, msgid)
+  return reply_iq
+    
 def main(args=None):
   if args is None:
     args = sys.argv

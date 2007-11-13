@@ -10,8 +10,11 @@ import re
 import sys
 import time
 import types
+import xmlrpclib
+from SimpleXMLRPCServer import SimpleXMLRPCDispatcher
 
 import xmpp
+from xmpp import simplexml
 from util import toJID, get_password, get_config
  
 class BenderJab(object):
@@ -51,7 +54,7 @@ class BenderJab(object):
       print e
 
     conn.send(xmpp.Message(to=who, typ='chat', body=reply))
-
+          
   def _parser(self, message, who):
     """Default parser function, 
     overide this or replace self.parser with a different function
@@ -103,8 +106,9 @@ class BenderJab(object):
     # tell the xmpp client that we're ready to handle things
     self.cl.RegisterHandler('message', self.messageCB)
     self.cl.RegisterHandler('presence', self.presenceCB)
-
+  
     # announce our existence to the server
+    self.cl.getRoster()
     self.cl.sendInitPresence()
     # not needed but lets me muck around with the client from interpreter
     return self.cl
@@ -138,6 +142,67 @@ class BenderJab(object):
   def disconnect(self):
     self.cl.disconnect()
 
+class XmlRpcBot(BenderJab, SimpleXMLRPCDispatcher):
+  def __init__(self, jid, password=None, resource=None):
+    BenderJab.__init__(self, jid, password, resource)
+    # SimpleXMLRPCDispatcher is still an "old-style" class
+    allow_none = False
+    encoding = None
+    SimpleXMLRPCDispatcher.__init__(self, allow_none, encoding)
+    
+  def logon(self):
+    """
+    """ 
+    cl = BenderJab.logon(self)
+    #cl.RegisterHandler('iq', self.iq_received)
+    cl.RegisterHandler('iq', self.bot_dispatcher, typ='set', ns=xmpp.NS_RPC)
+    
+    def foo(f):
+      print "foo", f
+      return f[::-1]
+    
+    def sumMethod(*args):
+      import operator
+      return reduce(operator.add, args)
+    
+    self.register_function(foo)
+    self.register_function(sumMethod)
+    return cl
+  
+  def bot_dispatcher(self, conn, msg):
+    msgid =None
+    
+    try:
+      who = msg.getFrom()
+      msgid = msg.getID()
+      children = msg.getChildren()
+      body = str(children[0])
+      print "id:",msg.getID()
+      print "body:",body
+      response = self._marshaled_dispatch(body)
+      response_node = simplexml.XML2Node(response)
+    
+      iq = xmpp.Iq(typ='result', to=who)
+      iq.setID(msgid)
+      query = iq.addChild('query', namespace=xmpp.NS_RPC)
+      query.addChild(node=response_node)
+      c = conn.send(iq)
+      print "response:", str(iq)
+    except RuntimeError,e:
+      # do something
+      print e
+      # come up with a better error message
+      xmlrpc_error(conn, who, 500, body, msgid)
+    raise xmpp.NodeProcessed
+    
+  def xmlrpc_error(self, conn, who, errcode, body, msgid=None):
+    iq = xmpp.Iq(typ='error', to=who)
+    if msgid is not None:
+      iq.setID(msgid)
+    iq.addChild(body)
+    error = iq.addChild('error', {'code': errcode, 'type': 'error'})
+    error.addChild('error', ns='urn:ietf:params:xml:ns:xmpp-stanzas')
+    
 def BenderFactory(profile, filename='~/.benderjab'):
   """Use the config parser to get our login credentials
   """
@@ -145,19 +210,23 @@ def BenderFactory(profile, filename='~/.benderjab'):
   return BenderJab(**jidparams)
 
 def makeOptions():
+  usage = "usage: %prog profile_name"
   parser = OptionParser()
 
   parser.add_option('-j', '--jid', dest="jid",
                     help="the jabber id we should connect as")
+  
   return parser
 
 def main(argv=None):
-  if argv is None:
-    argv = sys.argv
   arg_parser = makeOptions()
   opt, args = arg_parser.parse_args(argv)
  
-  bot = BenderJab(opt.jid)
+  if len(args) > 0:
+    profile = args[0]
+    
+  #bot = BenderJab(opt.jid)
+  bot = BenderFactory(profile)
   bot.logon()
   bot.eventLoop()
 
