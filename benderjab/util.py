@@ -92,10 +92,12 @@ def get_config(profile=None, filename='~/.benderjab'):
     hostname = socket.gethostname()
     if config.has_section(hostname):
       params.update( dict(config.items( socket.gethostname() )))
+  else:
+    if config.has_section(profile):
+      params.update( dict(config.items(profile)) )
 
   if params == default:
     print "Please edit",filename,"to include a valid JID for sending messages"
     return None
   
   return params
-
