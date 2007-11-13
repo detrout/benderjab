@@ -10,25 +10,21 @@ import time
 
 import xmpp
 
-from util import get_config
+from util import get_config, toJID
 
-def send(tojid, text, profile=None):
-  """Quickly send a jabber message tojid
-
-  :Parameters:
-    - `tojid`: The Jabber ID to send to
-    - `text`: a string containing the message to send
-    - `profile`: which set of credentials to use from the config file
+def connect(profile=None):
+  """
+  Connect to the server for our jabber id
   """
   jidparams = get_config(profile)
   # if we have no credentials, don't bother logging in
   if jidparams is None:
     return
 
-  jid=xmpp.protocol.JID(jidparams['jid'])
+  myjid=toJID(jidparams['jid'])
   # construct a client instance, logging into the JIDs servername
   # xmpp's default debug didn't work when I started using it
-  cl=xmpp.Client(jid.getDomain(),debug=[])
+  cl=xmpp.Client(myjid.getDomain(),debug=[])
 
   connection_type = ''
   connection_tries = 3
@@ -44,16 +40,30 @@ def send(tojid, text, profile=None):
     if connection_type == '':
       time.sleep( 5 + (random.random()*5 - 2.5))
 
+  # connection failed
   if connection_type == '':
     raise IOError("unable to connect to" + str(cl.Server))
-    
-
+  
   # try logging in
-  if cl.auth(jid.getNode(),jidparams['password'], 'xsend') is None:
-    print "Couldn't auth", cl.lastErr
-  else:
-    # we logged in, so we can send a message
-    cl.send(xmpp.protocol.Message(tojid,text))
+  if cl.auth(myjid.getNode(),jidparams['password'], 'xsend') is None:
+    raise IOError("Couldn't auth:"+str(cl.lastErr))
+  
+  return cl
+  
+def send(tojid, text, profile=None):
+  """Quickly send a jabber message tojid
+
+  :Parameters:
+    - `tojid`: The Jabber ID to send to
+    - `text`: a string containing the message to send
+    - `profile`: which set of credentials to use from the config file
+    
+  :Throws:
+    - IOError
+  """
+  cl = connect(profile)
+  # we logged in, so we can send a message
+  cl.send(xmpp.protocol.Message(tojid,text))
 
   # hang up politely
   cl.disconnect()
