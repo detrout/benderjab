@@ -16,6 +16,7 @@ from SimpleXMLRPCServer import SimpleXMLRPCDispatcher
 import xmpp
 from xmpp import simplexml
 from util import toJID, get_password, get_config
+from xsend import xmlrpc_make_iq, xmlrpc_extract_iq, xmlrpc_error_iq
  
 class BenderJab(object):
   """Base class for a simple jabber bot
@@ -149,12 +150,12 @@ class XmlRpcBot(BenderJab, SimpleXMLRPCDispatcher):
     allow_none = False
     encoding = None
     SimpleXMLRPCDispatcher.__init__(self, allow_none, encoding)
+    self.authorized_users = None
     
   def logon(self):
     """
     """ 
     cl = BenderJab.logon(self)
-    #cl.RegisterHandler('iq', self.iq_received)
     cl.RegisterHandler('iq', self.bot_dispatcher, typ='set', ns=xmpp.NS_RPC)
     
     def foo(f):
@@ -169,40 +170,36 @@ class XmlRpcBot(BenderJab, SimpleXMLRPCDispatcher):
     self.register_function(sumMethod)
     return cl
   
+  def check_authorization(self, who):
+      """
+      Check our sender against the allowed list of users
+      """
+      for user in self.authorized_users:
+          if who.bareMatch(user):
+              return True
+      return False
+      
   def bot_dispatcher(self, conn, msg):
     msgid =None
     
-    try:
-      who = msg.getFrom()
-      msgid = msg.getID()
-      children = msg.getChildren()
-      body = str(children[0])
-      print "id:",msg.getID()
-      print "body:",body
-      response = self._marshaled_dispatch(body)
-      response_node = simplexml.XML2Node(response)
-    
-      iq = xmpp.Iq(typ='result', to=who)
-      iq.setID(msgid)
-      query = iq.addChild('query', namespace=xmpp.NS_RPC)
-      query.addChild(node=response_node)
-      c = conn.send(iq)
-      print "response:", str(iq)
+    try:          
+        who = msg.getFrom()
+        msgid = msg.getID()
+        body = xmlrpc_extract_iq(msg)
+        if not (self.authorized_users is None or self.check_authorization(who)):
+            err_attrs = {'code': 503, 'type': 'auth'}
+            response_iq = xmlrpc_error_iq(who, err_attrs, 'forbidden', body, msgid)
+        else:
+            response = self._marshaled_dispatch(body) 
+            response_iq = xmlrpc_make_iq(who, 'result', response, msgid)
+        c = conn.send(response_iq)
     except RuntimeError,e:
-      # do something
-      print e
-      # come up with a better error message
-      xmlrpc_error(conn, who, 500, body, msgid)
+        # do something
+        print e
+        # come up with a better error message
+        #xmlrpc_error(conn, who, 500, body, msgid)
     raise xmpp.NodeProcessed
-    
-  def xmlrpc_error(self, conn, who, errcode, body, msgid=None):
-    iq = xmpp.Iq(typ='error', to=who)
-    if msgid is not None:
-      iq.setID(msgid)
-    iq.addChild(body)
-    error = iq.addChild('error', {'code': errcode, 'type': 'error'})
-    error.addChild('error', ns='urn:ietf:params:xml:ns:xmpp-stanzas')
-    
+              
 def BenderFactory(profile, filename='~/.benderjab'):
   """Use the config parser to get our login credentials
   """
