@@ -5,18 +5,16 @@
 #
 import commands
 from getpass import getpass
+import logging
 from optparse import OptionParser
 import re
 import sys
 import time
 import types
-import xmlrpclib
-from SimpleXMLRPCServer import SimpleXMLRPCDispatcher
 
 import xmpp
-from xmpp import simplexml
-from util import toJID, get_password, get_config
-from xsend import xmlrpc_make_iq, xmlrpc_extract_iq, xmlrpc_error_iq
+
+from benderjab.util import toJID, get_password, get_config
  
 class BenderJab(object):
   """Base class for a simple jabber bot
@@ -32,6 +30,7 @@ class BenderJab(object):
     if resource is None:
       resource = "BenderJab"
 
+    self.cl = None
     self.jid = toJID(jid)
     self.resource = resource
     self.password = password
@@ -39,6 +38,7 @@ class BenderJab(object):
     self.timeout = 1
     self.parser = self._parser
     self.eventTasks = []
+    self.log = logging.getLogger('benderjab.bot')
 
   def messageCB(self, conn, msg):
     """Simple handling of messages
@@ -52,7 +52,7 @@ class BenderJab(object):
       reply = self.parser(body, who)
     except Exception, e:
       reply = "failed: " + str(e)
-      print e
+      self.log.error("Exception in messageCB. "+str(e))
 
     conn.send(xmpp.Message(to=who, typ='chat', body=reply))
           
@@ -100,7 +100,7 @@ class BenderJab(object):
     auth_state = self.cl.auth(self.jid.getNode(), self.password, self.resource)
     if auth_state is None:
       # auth failed
-      print "couldn't authenticate", unicode(self.jid)
+      self.log.error(u"couldn't authenticate with"+unicode(self.jid))
       # probably want a better exception here
       raise RuntimeError(self.cl.lastErr)
 
@@ -129,6 +129,9 @@ class BenderJab(object):
   def eventLoop(self, timeout=None):
     """Loop forever (or until timeout)
     """
+    if self.cl is None:
+        self.logon()
+        
     if timeout is None:
       while self.eventStep(self.cl):
         pass
@@ -143,62 +146,6 @@ class BenderJab(object):
   def disconnect(self):
     self.cl.disconnect()
 
-class XmlRpcBot(BenderJab, SimpleXMLRPCDispatcher):
-  def __init__(self, jid, password=None, resource=None):
-    BenderJab.__init__(self, jid, password, resource)
-    # SimpleXMLRPCDispatcher is still an "old-style" class
-    allow_none = False
-    encoding = None
-    SimpleXMLRPCDispatcher.__init__(self, allow_none, encoding)
-    self.authorized_users = None
-    
-  def logon(self):
-    """
-    """ 
-    cl = BenderJab.logon(self)
-    cl.RegisterHandler('iq', self.bot_dispatcher, typ='set', ns=xmpp.NS_RPC)
-    
-    def foo(f):
-      print "foo", f
-      return f[::-1]
-    
-    def sumMethod(*args):
-      import operator
-      return reduce(operator.add, args)
-    
-    self.register_function(foo)
-    self.register_function(sumMethod)
-    return cl
-  
-  def check_authorization(self, who):
-      """
-      Check our sender against the allowed list of users
-      """
-      for user in self.authorized_users:
-          if who.bareMatch(user):
-              return True
-      return False
-      
-  def bot_dispatcher(self, conn, msg):
-    msgid =None
-    
-    try:          
-        who = msg.getFrom()
-        msgid = msg.getID()
-        body = xmlrpc_extract_iq(msg)
-        if not (self.authorized_users is None or self.check_authorization(who)):
-            err_attrs = {'code': 503, 'type': 'auth'}
-            response_iq = xmlrpc_error_iq(who, err_attrs, 'forbidden', body, msgid)
-        else:
-            response = self._marshaled_dispatch(body) 
-            response_iq = xmlrpc_make_iq(who, 'result', response, msgid)
-        c = conn.send(response_iq)
-    except RuntimeError,e:
-        # do something
-        print e
-        # come up with a better error message
-        #xmlrpc_error(conn, who, 500, body, msgid)
-    raise xmpp.NodeProcessed
               
 def BenderFactory(profile, filename='~/.benderjab'):
   """Use the config parser to get our login credentials
