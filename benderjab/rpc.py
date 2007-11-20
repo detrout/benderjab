@@ -114,13 +114,7 @@ class XmlRpcBot(BenderJab, SimpleXMLRPCDispatcher):
         cl = BenderJab.logon(self)
         cl.RegisterHandler('iq', self.bot_dispatcher, typ='set', ns=xmpp.NS_RPC)
     
-        def sumMethod(*args):
-            import operator
-            return reduce(operator.add, args)
-    
-        self.register_function(sumMethod)
-        return cl
-  
+
     def check_authorization(self, who):
         """
         Check our sender against the allowed list of users
