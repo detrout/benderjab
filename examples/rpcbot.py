@@ -25,7 +25,7 @@ class SumBot(rpc.XmlRpcBot):
         self.register_function(sumMethod)
         
     def _parser(self, msg, who):
-        if re.match("help"):
+        if re.match("help", msg):
             reply = "I respond to xml-rpc messages adding a list of numbers together"
         else:
             reply = "I don't do much, but you can try 'help'"
