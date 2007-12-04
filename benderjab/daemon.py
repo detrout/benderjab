@@ -19,13 +19,11 @@ References:
          http://www.erlenstar.demon.co.uk/unix/faq_toc.html
 """
 
-__author__ = "Chad J. Schroeder"
-__copyright__ = "Copyright (C) 2005 Chad J. Schroeder"
-
-__revision__ = "$Id$"
-__version__ = "0.2"
+# Initial Author "Chad J. Schroeder"
 
 # Standard Python modules.
+import errno
+import logging
 import os               # Miscellaneous OS interfaces.
 import sys              # System-specific parameters and functions.
 
@@ -182,6 +180,47 @@ def createDaemon():
 
    return(0)
 
+
+def checkPidFileIsSafeToRun(filename):
+    """
+    Check specified pid file to see if its safe to run
+    """
+    if os.path.exists(filename):
+        try:
+            pid = int(open(filename).read().strip())
+        except ValueError:
+            logging.error("pidfile %s doesn't contain a pid" % filename)
+            return False
+            
+        if pid == os.getpid():
+            # this is us
+            return True
+        
+        try:
+            os.kill(pid, 0)
+        except OSError, (code, text):
+            if code == errno.ESRCH:
+                # pidfile is stale
+                os.remove(filename)
+                return True
+            else:
+                logging.error("failed checking status of pid %d in file %s" % (pid, filename))
+                return False
+        else:
+            logging.warning("Another instance seems to be running (pid %d)" %(pid))
+            return False
+    else:
+        return True
+        
+def writePidFile(filename):
+    """
+    Write our pid to specified filename
+    """
+    if os.path.exists(filename):
+        os.remove(filename)
+    open(filename,'w').write(str(os.getpid()))
+    
+    
 if __name__ == "__main__":
 
    retCode = createDaemon()
