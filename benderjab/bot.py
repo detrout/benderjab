@@ -113,6 +113,13 @@ class BenderJab(object):
     self.cl.sendInitPresence()
     # not needed but lets me muck around with the client from interpreter
     return self.cl
+  
+  def send(self, jid, message):
+      """
+      Send a message to specified user
+      """
+      tojid = toJID(jid)
+      self.cl.send(xmpp.protocol.Message(tojid,unicode(message)))
 
   def eventStep(self, conn):
     """single step through the event loop"""
