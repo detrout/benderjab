@@ -42,13 +42,46 @@ class BenderJab(object):
     self.cfg['resource'] = "BenderJab"
     # number of seconds to wait in each poll step
     self.cfg['timeout'] = 5
-    self.cfg['pid'] = "/tmp/%(jid)s.%(resource)s"
+    self.cfg['pid'] = "/tmp/%(jid)s.%(resource)s.pid"
+    self.cfg['log'] = "/tmp/%(jid)s.%(resource)s.log"
+    self.cfg['loglevel'] = "WARNING"
         
     # set defaults for things that can't be set from a config file
     self.cl = None
     self.parser = self._parser
     self.eventTasks = []
     self.log = logging.getLogger('benderjab.bot')
+    
+  def configure_logging(self):
+      """
+      Set up log
+      """
+      levelname = self.cfg['loglevel']
+      
+      if levelname is None:
+          loglevel = logging.DEBUG
+      else:
+          levename = levelname.upper()
+          if levelname == 'DEBUG':
+              loglevel = logging.DEBUG
+          elif levelname == 'INFO':
+              loglevel = logging.INFO
+          elif levelname == 'WARNING':
+              loglevel = logging.WARNING
+          elif levelname == 'ERROR':
+              loglevel = logging.ERROR
+          elif levelname == 'CRITICAL':
+              loglevel = logging.CRITICAL
+          elif levelname == 'FATAL':
+              loglevel = logging.FATAL
+          else:
+              loglevel = logging.DEBUG
+      
+      print levelname, loglevel
+      logging.basicConfig(level=loglevel,
+                          format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
+                          filename=self.log_filename,
+                          filemode='w')
 
   def read_config(self, section=None, configfile=None):
       """
@@ -92,14 +125,26 @@ class BenderJab(object):
                         help="Don't run in background")
       return parser
   
-  def _get_pidfile(self):
+  def _get_cfg_subset(self):
       """
-      format the pidfile
+      return a subset of config options for formatting of our *_filename functions
       """
-      attribs = { 'jid': self.cfg['jid'],
-                  'resource': self.cfg['resource']}
-      return self.cfg['pid'] % (attribs)
-  pidfile = property(_get_pidfile, doc="name of file to store our process ID in")
+      return { 'jid': self.cfg['jid'],
+               'resource': self.cfg['resource']}
+               
+  def _get_pid_filename(self):
+      """
+      format the pid filename
+      """
+      return self.cfg['pid'] % (self._get_cfg_subset())
+  pid_filename = property(_get_pid_filename, doc="name of file to store our process ID in")
+  
+  def _get_log_filename(self):
+      """
+      Format the log filename
+      """
+      return self.cfg['log'] % (self._get_cfg_subset())
+  log_filename = property(_get_log_filename, doc="name of file to store our log in")
       
   def main(self, args=None):
       """
@@ -128,14 +173,15 @@ class BenderJab(object):
           self.restart(opt.daemon)
       
   def start(self, daemonize):
-      if daemon.checkPidFileIsSafeToRun(self.pidfile):
+      if daemon.checkPidFileIsSafeToRun(self.pid_filename):
           if daemonize:
               daemon.createDaemon()
-          daemon.writePidFile(self.pidfile)
+          daemon.writePidFile(self.pid_filename)
+          self.configure_logging()
           self.run()
   
   def stop(self):
-      pid = daemon.readPidFile(self.pidfile)
+      pid = daemon.readPidFile(self.pid_filename)
       if pid is None:
           return
       
@@ -144,7 +190,7 @@ class BenderJab(object):
       except OSError, (code, text):
           if code == errno.ESRCH:
               logging.warning("PID %d isn't running" % (pid))
-      os.unlink(self.pidfile)
+      os.unlink(self.pid_filename)
   
   def restart(self, daemonize):
       self.stop()
@@ -192,8 +238,9 @@ class BenderJab(object):
       """
       Send a message to specified user
       """
+      logging.debug(u"TO: <%s> " % (unicode(jid)) + unicode(message))
       tojid = toJID(jid)
-      self.cl.send(xmpp.protocol.Message(tojid,unicode(message)))
+      self.cl.send(xmpp.protocol.Message(tojid,typ='chat',body=unicode(message)))
 
   def messageCB(self, conn, msg):
     """Simple handling of messages
@@ -204,12 +251,13 @@ class BenderJab(object):
     if body is None:
       return
     try:
+      logging.debug(u"FROM: <%s> " % (unicode(who)) + unicode(body))
       reply = self.parser(body, who)
     except Exception, e:
-      reply = "failed: " + str(e)
-      self.log.error("Exception in messageCB. "+str(e))
+      reply = u"failed: " + unicode(e)
+      self.log.error("Exception in messageCB. "+unicode(e))
 
-    conn.send(xmpp.Message(to=who, typ='chat', body=reply))
+    self.send(who, reply)
           
   def _parser(self, message, who):
     """Default parser function, 
@@ -240,10 +288,12 @@ class BenderJab(object):
       conn.send(xmpp.Presence(to=who, typ='subscribe'))
       # Be friendly
       conn.send(xmpp.Message(who, "hi " + who.getNode(), typ='chat'))
+      logging.info("%s subscribed" % (who))
     elif presence_type == "unsubscribe":
       conn.send(xmpp.Message(who, "bye " + who.getNode(), typ='chat'))
       conn.send(xmpp.Presence(to=who, typ='unsubscribed'))
       conn.send(xmpp.Presence(to=who, typ='unsubscribe'))
+      logging.info("%s unsubscribed" % (who))
 
   def step(self, conn, timeout):
     """single step through the event loop"""
