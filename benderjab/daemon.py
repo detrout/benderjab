@@ -180,17 +180,32 @@ def createDaemon():
 
    return(0)
 
+def readPidFile(filename):
+    """
+    read a pid file.
+    Allow I/O exceptions to propegate
+    """
+    try:
+        return int(open(filename).read().strip())
+    except ValueError:
+        logging.error("pidfile %s doesn't contain a pid" % filename)
+        return None
+
+def writePidFile(filename):
+    """
+    Write our pid to specified filename
+    """
+    if os.path.exists(filename):
+        os.remove(filename)
+    open(filename,'w').write(str(os.getpid()))
+    
 
 def checkPidFileIsSafeToRun(filename):
     """
     Check specified pid file to see if its safe to run
     """
     if os.path.exists(filename):
-        try:
-            pid = int(open(filename).read().strip())
-        except ValueError:
-            logging.error("pidfile %s doesn't contain a pid" % filename)
-            return False
+        pid = readPidFile(filename)
             
         if pid == os.getpid():
             # this is us
@@ -211,16 +226,7 @@ def checkPidFileIsSafeToRun(filename):
             return False
     else:
         return True
-        
-def writePidFile(filename):
-    """
-    Write our pid to specified filename
-    """
-    if os.path.exists(filename):
-        os.remove(filename)
-    open(filename,'w').write(str(os.getpid()))
-    
-    
+
 if __name__ == "__main__":
 
    retCode = createDaemon()
