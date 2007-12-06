@@ -209,7 +209,7 @@ def removePidFile(filename):
         pass
     elif pid == os.getpid():
         # its our pid
-        os.unlink(filename)
+        os.remove(filename)
     else:
         # its not our pid
         logging.error("PID in %s (%d) is not our PID (%s)" % (filename, pid, os.getpid()))
