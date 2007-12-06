@@ -16,8 +16,8 @@ from benderjab.util import get_config
 #
 # 
 class SumBot(rpc.XmlRpcBot):
-    def __init__(self, jid, password, resource='xmlrpc'):
-        super(SumBot, self).__init__(jid, password, resource)
+    def __init__(self):
+        super(SumBot, self).__init__()
         
         def sumMethod(*args):
             return reduce(operator.add, args)
@@ -31,20 +31,6 @@ class SumBot(rpc.XmlRpcBot):
             reply = "I don't do much, but you can try 'help'"
         return reply
           
-def usage():
-    print "usage: rpcbot.py <.benderjab conf section name>"
-    print
-
-def main(args=None):
-    if len(args) != 1:
-        usage()
-        return 1
-    
-    config_name = args[0]
-    
-    bot = SumBot(**get_config(config_name))
-    bot.eventLoop()
-    return 0
-
 if __name__ == "__main__":
-    sys.exit(main(sys.argv[1:]))
+    bot = SumBot()
+    sys.exit(bot.main(sys.argv[1:]))

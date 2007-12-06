@@ -100,8 +100,8 @@ def call(conn, tojid, params, methodname=None, encoding=None):
     
 
 class XmlRpcBot(BenderJab, SimpleXMLRPCDispatcher):
-    def __init__(self, jid, password=None, resource=None):
-        super(XmlRpcBot, self).__init__(jid, password, resource)
+    def __init__(self):
+        super(XmlRpcBot, self).__init__()
         # SimpleXMLRPCDispatcher is still an "old-style" class
         allow_none = False
         encoding = None
