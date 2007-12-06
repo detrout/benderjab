@@ -81,7 +81,7 @@ class BenderJab(object):
       logging.basicConfig(level=loglevel,
                           format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
                           filename=self.log_filename,
-                          filemode='w')
+                          filemode='a')
 
   def read_config(self, section=None, configfile=None):
       """
@@ -145,6 +145,12 @@ class BenderJab(object):
       """
       return self.cfg['log'] % (self._get_cfg_subset())
   log_filename = property(_get_log_filename, doc="name of file to store our log in")
+  
+  def on_sigterm(self, signalnum, frame):
+      raise KeyboardInterrupt("SIGTERM")
+      
+  def register_signal_handlers(self):
+      signal.signal(signal.SIGTERM, self.on_sigterm)
       
   def main(self, args=None):
       """
@@ -176,9 +182,21 @@ class BenderJab(object):
       if daemon.checkPidFileIsSafeToRun(self.pid_filename):
           if daemonize:
               daemon.createDaemon()
+          self.register_signal_handlers()
           daemon.writePidFile(self.pid_filename)
           self.configure_logging()
-          self.run()
+          logging.critical("starting up")
+          try:
+              self.run()
+          except (KeyboardInterrupt, SystemExit):
+              pass
+          except Exception, e:
+              logging.fatal(u'Fatal Exception: ' + unicode(e))
+          finally:
+              # indicate shutting down
+              logging.warn("shutting down. (%d)" % (os.getpid()))
+              logging.shutdown()
+              daemon.removePidFile(self.pid_filename)
   
   def stop(self):
       pid = daemon.readPidFile(self.pid_filename)
@@ -190,7 +208,6 @@ class BenderJab(object):
       except OSError, (code, text):
           if code == errno.ESRCH:
               logging.warning("PID %d isn't running" % (pid))
-      os.unlink(self.pid_filename)
   
   def restart(self, daemonize):
       self.stop()

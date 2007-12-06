@@ -188,8 +188,11 @@ def readPidFile(filename):
     try:
         return int(open(filename).read().strip())
     except ValueError:
-        logging.error("pidfile %s doesn't contain a pid" % filename)
-        return None
+        logging.error(u"pidfile %s doesn't contain a pid" % (filename))
+    except IOError, e:
+        logging.error(u"IOError reading %s: %s" % (filename, unicode(e)))
+    return None
+   
 
 def writePidFile(filename):
     """
@@ -199,6 +202,18 @@ def writePidFile(filename):
         os.remove(filename)
     open(filename,'w').write(str(os.getpid()))
     
+def removePidFile(filename):
+    pid = readPidFile(filename)
+    if pid is None:
+        # there's a problem with the file
+        pass
+    elif pid == os.getpid():
+        # its our pid
+        os.unlink(filename)
+    else:
+        # its not our pid
+        logging.error("PID in %s (%d) is not our PID (%s)" % (filename, pid, os.getpid()))
+    
 
 def checkPidFileIsSafeToRun(filename):
     """
@@ -206,6 +221,10 @@ def checkPidFileIsSafeToRun(filename):
     """
     if os.path.exists(filename):
         pid = readPidFile(filename)
+        
+        if pid is None:
+            # no pid file found, seems safe
+            return True
             
         if pid == os.getpid():
             # this is us
