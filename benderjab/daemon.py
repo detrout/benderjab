@@ -241,7 +241,9 @@ def checkPidFileIsSafeToRun(filename):
                 logging.error("failed checking status of pid %d in file %s" % (pid, filename))
                 return False
         else:
-            logging.warning("Another instance seems to be running (pid %d)" %(pid))
+            #logging.warning("Another instance seems to be running (pid %d)" %(pid))
+            print "Another instance seems to be running (pid %d)" %(pid)
+            
             return False
     else:
         return True
