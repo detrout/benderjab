@@ -47,6 +47,7 @@ class BenderJab(object):
     self.cfg['loglevel'] = "WARNING"
         
     # set defaults for things that can't be set from a config file
+    self.authorized_users = None
     self.cl = None
     self.parser = self._parser
     self.eventTasks = []
@@ -83,6 +84,31 @@ class BenderJab(object):
                           filename=self.log_filename,
                           filemode='a')
 
+
+  def _parse_user_list(self, user_list):
+    """
+    Convert a space separated list of users into a list of JIDs
+    """
+    if user_list is None:
+        return None
+    
+    parsed_list = []
+    for user in user_list.split():
+        parsed_list.append(toJID(user))
+    return parsed_list
+            
+  def check_authorization(self, who):
+    """
+    Check our sender against the allowed list of users
+    """
+    if self.authorized_users is None:
+        return True
+    
+    for user in self.authorized_users:
+      if who.bareMatch(user):
+        return True
+    return False
+    
   def read_config(self, section=None, configfile=None):
       """
       Grab all the parameters from [section] in configfile 
@@ -94,6 +120,8 @@ class BenderJab(object):
           configfile = self.configfile
           
       self.cfg.update(get_config(section, configfile))
+      
+      self.authorized_users = self._parse_user_list(self.cfg.get('authorized_users', None))
   
   def command_line_parser(self):
       """
@@ -146,6 +174,24 @@ class BenderJab(object):
       return self.cfg['log'] % (self._get_cfg_subset())
   log_filename = property(_get_log_filename, doc="name of file to store our log in")
   
+  def _get_jid(self):
+      return self.cfg['jid']
+  def _set_jid(self, jid):
+      if self.cl is None:
+          self.cfg['jid'] = toJID(jid)
+      else:
+          raise ValueError("Already logged in, can't change jabber ID")
+  jid = property(_get_jid, _set_jid, doc="set jabber ID")
+  
+  def _get_resource(self):
+      return self.cfg['resource']
+  def _set_resource(self, resource):
+      if self.cl is None:
+          self.cfg['resource'] = resource
+      else:
+          raise ValueError("Already logged in, can't change resource")
+  resource = property(_get_resource, _set_resource, doc="set jabber resource ID")
+     
   def on_sigterm(self, signalnum, frame):
       raise KeyboardInterrupt("SIGTERM")
       
@@ -266,13 +312,17 @@ class BenderJab(object):
     body = msg.getBody()
      
     if body is None:
-      return
-    try:
-      logging.debug(u"FROM: <%s> " % (unicode(who)) + unicode(body))
-      reply = self.parser(body, who)
-    except Exception, e:
-      reply = u"failed: " + unicode(e)
-      self.log.error("Exception in messageCB. "+unicode(e))
+        logging.debug(u"FROM: <%s>: sent empty packet" %(unicode(who)))
+        return None
+    elif self.check_authorization(who):
+        try:
+            logging.debug(u"FROM: <%s> " % (unicode(who)) + unicode(body))
+            reply = self.parser(body, who)
+        except Exception, e:
+            reply = u"Exception: " + unicode(e)
+            self.log.error(u"Exception in messageCB. "+unicode(e))
+    else:
+        reply = u"Authorization Error."
 
     self.send(who, reply)
           

@@ -100,29 +100,25 @@ def call(conn, tojid, params, methodname=None, encoding=None):
     
 
 class XmlRpcBot(BenderJab, SimpleXMLRPCDispatcher):
-    def __init__(self):
-        super(XmlRpcBot, self).__init__()
-        # SimpleXMLRPCDispatcher is still an "old-style" class
+    def __init__(self, section=None, configfile=None):
+        super(XmlRpcBot, self).__init__(section, configfile)
+        self.cfg['authorized_users'] = None
+        
         allow_none = False
         encoding = None
+        # SimpleXMLRPCDispatcher is still an "old-style" class, 
+        # so super doesn't work right
         SimpleXMLRPCDispatcher.__init__(self, allow_none, encoding)
         self.authorized_users = None
-    
+        
+    def read_config(self, section=None, configfile=None):
+        super(XmlRpcBot, self).read_config(section, configfile)
+        
     def logon(self):
         """
         """ 
         cl = BenderJab.logon(self)
         cl.RegisterHandler('iq', self.bot_dispatcher, typ='set', ns=xmpp.NS_RPC)
-    
-
-    def check_authorization(self, who):
-        """
-        Check our sender against the allowed list of users
-        """
-        for user in self.authorized_users:
-            if who.bareMatch(user):
-                return True
-        return False
       
     def bot_dispatcher(self, conn, msg):
         msgid =None
