@@ -7,6 +7,7 @@ import commands
 import errno
 from getpass import getpass
 import logging
+from logging.handlers import RotatingFileHandler
 from optparse import OptionParser
 import os
 import re
@@ -80,9 +81,7 @@ class BenderJab(object):
       
       print levelname, loglevel
       logging.basicConfig(level=loglevel,
-                          format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
-                          filename=self.log_filename,
-                          filemode='a')
+                          format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s')
 
 
   def _parse_user_list(self, user_list):
@@ -204,6 +203,7 @@ class BenderJab(object):
       """
       if args is None:
           args = sys.argv[1:]
+      saved_args = args
       opt_parser = self.command_line_parser()
       opt, args = opt_parser.parse_args(args)
       
@@ -212,6 +212,9 @@ class BenderJab(object):
               opt_parser.error("unable to find %s" % (opt.options.configfile))
       self.read_config(opt.section, opt.configfile)
       
+      self.configure_logging()
+      logging.debug("Options: " + " ".join(saved_args))
+
       if opt.jid is not None:
           self.cfg['jid'] = opt.jid
       if opt.resource is not None:
@@ -223,14 +226,26 @@ class BenderJab(object):
           self.stop()
       elif opt.action == 'restart':
           self.restart(opt.daemon)
+          
+  def daemonize(self):
+      """
+      Things to do when detaching from the terminal
+      """
+      logger = logging.getLogger()
+      # limit log size to 1 megabyte
+      m = 1024 **2
+      file_handler = RotatingFileHandler(self.log_filename, 'a',m)
+      file_handler.doRollover()
+      logger.addHandler(file_handler)
+      logging.debug('detaching from console')
+      daemon.createDaemon()
       
   def start(self, daemonize):
       if daemon.checkPidFileIsSafeToRun(self.pid_filename):
           if daemonize:
-              daemon.createDaemon()
+              self.daemonize()
           self.register_signal_handlers()
           daemon.writePidFile(self.pid_filename)
-          self.configure_logging()
           logging.critical("starting up")
           try:
               self.run()
@@ -245,15 +260,19 @@ class BenderJab(object):
               daemon.removePidFile(self.pid_filename)
   
   def stop(self):
-      pid = daemon.readPidFile(self.pid_filename)
-      if pid is None:
-          return
+      if os.path.exists(self.pid_filename):
+          pid = daemon.readPidFile(self.pid_filename)
+          if pid is None:
+              return
       
-      try:
-          os.kill(pid, signal.SIGTERM)
-      except OSError, (code, text):
-          if code == errno.ESRCH:
-              logging.warning("PID %d isn't running" % (pid))
+          try:
+              os.kill(pid, signal.SIGTERM)
+          except OSError, (code, text):
+              if code == errno.ESRCH:
+                  logging.warning("PID %d isn't running" % (pid))
+      else:
+          msg = "No pidfile at %s, assuming nothing is running"
+          logging.info(msg % (self.pid_filename))
   
   def restart(self, daemonize):
       self.stop()
