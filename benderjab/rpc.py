@@ -119,6 +119,32 @@ class XmlRpcBot(BenderJab, SimpleXMLRPCDispatcher):
         """ 
         cl = BenderJab.logon(self)
         cl.RegisterHandler('iq', self.bot_dispatcher, typ='set', ns=xmpp.NS_RPC)
+        
+    def rpc_send(self, tojid, args, method):
+        """
+        Send a XMl-RPC message to tojid.
+        """
+        if self.cl is None:
+            msg = "Bot isn't connected to the server"
+            logging.fatal(msg)
+            raise RuntimeError(msg)
+        msg = 'RPC Send: ' + str(method) + str(args)
+        logging.debug(msg)
+        return send(self.cl, tojid, args, method)
+    
+    def rpc_call(self, tojid, args, method):
+        """
+        Send a XML-RPC message to tojid, and return the response
+        """
+        if self.cl is None:
+            msg = "Bot isn't connected to the server"
+            logging.fatal(msg)
+            raise RuntimeError(msg)
+        msg = 'RPC Call: ' + str(method) + str(args)
+        logging.debug(msg)
+        result = call(self.cl, tojid, args, method)
+        logging.debug("Result: " + str(result))
+        return result
       
     def bot_dispatcher(self, conn, msg):
         msgid =None
