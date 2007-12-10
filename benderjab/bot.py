@@ -119,6 +119,17 @@ class BenderJab(object):
         return True
     return False
     
+  def _check_required_option(self, name):
+    """
+    Check cfg for a required option
+    """
+    if self.cfg[name] is None:
+      errmsg="Please specify %s in the configfile" % (name)
+      logging.fatal(errmsg)
+      raise RuntimeError(errmsg)
+    else:
+      return self.cfg[name]
+  
   def read_config(self, section=None, configfile=None):
       """
       Grab all the parameters from [section] in configfile 
