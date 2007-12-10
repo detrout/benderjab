@@ -21,6 +21,13 @@ import xmpp
 from benderjab.util import toJID, get_password, get_config
 from benderjab import daemon
  
+class JIDMissingResource(RuntimeError):
+    """
+    XML RPC calls need the full jabber ID + resource to work
+    so we might wnat to check to make sure they're present.
+    """
+    pass
+
 class BenderJab(object):
   """Base class for a simple jabber bot
 
@@ -84,7 +91,7 @@ class BenderJab(object):
                           format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s')
 
 
-  def _parse_user_list(self, user_list):
+  def _parse_user_list(self, user_list, require_resource=False):
     """
     Convert a space separated list of users into a list of JIDs
     """
@@ -93,7 +100,11 @@ class BenderJab(object):
     
     parsed_list = []
     for user in user_list.split():
-        parsed_list.append(toJID(user))
+        jid = toJID(user)
+        if require_resource and len(jid.resource) == 0:
+            msg = 'need a resource identifier for the Jabber ID'
+            raise JIDMissingResource(msg)
+        parsed_list.append(jid)
     return parsed_list
             
   def check_authorization(self, who):

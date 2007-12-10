@@ -89,6 +89,20 @@ class TestBot(unittest.TestCase):
         b.messageCB(b.cl, msg)
         response = b.cl.msg.getBody()
         self.failUnlessEqual('Authorization Error.', response)
+        
+    def test_check_jid_resource(self):
+        """
+        Make sure that we get a JIDMissingResource if required
+        """
+        b = bot.BenderJab()
+        users_good = "user1@example.fake/resource user2@example.fake/resource"
+        users_bad = "user1@example.fake/resource user2@example.fake"
+        
+        user_list1 = b._parse_user_list(users_good, require_resource=True)
+        self.failUnlessRaises(bot.JIDMissingResource, 
+                            b._parse_user_list,
+                            users_bad,
+                            require_resource=True)
   
 def suite():
     return unittest.makeSuite(TestBot)
