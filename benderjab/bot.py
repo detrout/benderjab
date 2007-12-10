@@ -379,6 +379,9 @@ class BenderJab(object):
       reply = "Server time is "+time.asctime()
     elif re.match("uptime", message):
       reply = commands.getoutput("uptime")
+    elif re.match("Exception:", message):
+      logging.warning("Received Exception: " + message)
+      reply = None
     else:
       reply = "I have no idea what \""+message+"\" means."
     return reply
