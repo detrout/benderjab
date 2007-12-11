@@ -128,7 +128,7 @@ class XmlRpcBot(BenderJab, SimpleXMLRPCDispatcher):
             msg = "Bot isn't connected to the server"
             logging.fatal(msg)
             raise RuntimeError(msg)
-        msg = 'RPC Send: ' + str(method) + str(args)
+        msg = 'RPC Send <%s>: %s' %(str(tojid),str(method) + str(args))
         logging.debug(msg)
         return send(self.cl, tojid, args, method)
     
@@ -140,7 +140,7 @@ class XmlRpcBot(BenderJab, SimpleXMLRPCDispatcher):
             msg = "Bot isn't connected to the server"
             logging.fatal(msg)
             raise RuntimeError(msg)
-        msg = 'RPC Call: ' + str(method) + str(args)
+        msg = 'RPC Call <%s>: %s' %(str(tojid), str(method) + str(args))
         logging.debug(msg)
         result = call(self.cl, tojid, args, method)
         logging.debug("Result: " + str(result))
