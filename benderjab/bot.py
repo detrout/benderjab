@@ -18,7 +18,7 @@ import types
 
 import xmpp
 
-from benderjab.util import toJID, get_password, get_config
+from benderjab import util
 from benderjab import daemon
  
 class JIDMissingResource(RuntimeError):
@@ -100,7 +100,7 @@ class BenderJab(object):
     
     parsed_list = []
     for user in user_list.split():
-        jid = toJID(user)
+        jid = util.toJID(user)
         if require_resource and len(jid.resource) == 0:
             msg = 'need a resource identifier for the Jabber ID'
             raise JIDMissingResource(msg)
@@ -140,7 +140,7 @@ class BenderJab(object):
       if configfile is None:
           configfile = self.configfile
           
-      self.cfg.update(get_config(section, configfile))
+      self.cfg.update(util.get_config(section, configfile))
       
       self.authorized_users = self._parse_user_list(self.cfg.get('authorized_users', None))
   
@@ -199,7 +199,7 @@ class BenderJab(object):
       return self.cfg['jid']
   def _set_jid(self, jid):
       if self.cl is None:
-          self.cfg['jid'] = toJID(jid)
+          self.cfg['jid'] = util.toJID(jid)
       else:
           raise ValueError("Already logged in, can't change jabber ID")
   jid = property(_get_jid, _set_jid, doc="set jabber ID")
@@ -304,7 +304,7 @@ class BenderJab(object):
   def logon(self, jid=None, password=None, resource=None):
     """connect to server"""
     if jid is not None:
-        self.cfg['jid'] = toJID(jid)
+        self.cfg['jid'] = util.toJID(jid)
     if password is not None:
         self.cfg['password'] = password
     if resource is not None:
@@ -315,7 +315,7 @@ class BenderJab(object):
     if self.cfg['password'] is None:
         raise ValueError("please set a password before logging in")
     
-    jid = toJID(self.cfg['jid'])    
+    jid = util.toJID(self.cfg['jid'])    
     self.cl = xmpp.Client(jid.getDomain(), debug=[])
     # if you have dnspython installed and use_srv is True
     # the dns service discovery lookup seems to fail.
@@ -343,7 +343,7 @@ class BenderJab(object):
       Send a message to specified user
       """
       logging.debug(u"TO: <%s> " % (unicode(jid)) + unicode(message))
-      tojid = toJID(jid)
+      tojid = util.toJID(jid)
       self.cl.send(xmpp.protocol.Message(tojid,typ='chat',body=unicode(message)))
 
   def messageCB(self, conn, msg):
