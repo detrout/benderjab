@@ -275,11 +275,11 @@ class BenderJab(object):
               pass
           except Exception, e:
               logging.fatal(u'Fatal Exception: ' + unicode(e))
-          finally:
-              # indicate shutting down
-              logging.warn("shutting down. (%d)" % (os.getpid()))
-              logging.shutdown()
-              daemon.removePidFile(self.pid_filename)
+              
+          # indicate shutting down
+          logging.warn("shutting down. (%d)" % (os.getpid()))
+          logging.shutdown()
+          daemon.removePidFile(self.pid_filename)
   
   def stop(self):
       if os.path.exists(self.pid_filename):
