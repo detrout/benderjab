@@ -11,6 +11,7 @@ the jabber message and return the xml-rpc (args, methodname) tuple
 import logging
 import xmlrpclib
 from SimpleXMLRPCServer import SimpleXMLRPCDispatcher
+import sys
 
 import xmpp
 from xmpp import simplexml
@@ -53,7 +54,13 @@ def extract_iq(iq):
     """
     children = iq.getChildren()
     if len(children) < 1:
-        raise XmlRpcProtocolError("Iq didn't have a body to extract")
+        errmsg = u"Iq didn't have a body to extract"
+        logging.debug(errmsg + u": " + unicode(iq))
+        raise XmlRpcProtocolError(errmsg)
+    elif len(children) > 1:
+        errmsg = u"Too many child nodes"
+        logging.debug(errmsg + u": " + unicode(iq))
+        raise XmlRpcProtocolError(errmsg)
     else:
         return str(children[0])
 
@@ -108,7 +115,15 @@ class XmlRpcBot(BenderJab, SimpleXMLRPCDispatcher):
         encoding = None
         # SimpleXMLRPCDispatcher is still an "old-style" class, 
         # so super doesn't work right
-        SimpleXMLRPCDispatcher.__init__(self, allow_none, encoding)
+        # 
+        # further ick, this is an 'internal' class so signature changed
+        # between python2.4 and python2.5
+        if sys.version_info[0] == 2 and sys.version_info[1] > 4:
+            # python 2.5 version
+            SimpleXMLRPCDispatcher.__init__(self, allow_none, encoding)
+        else:
+            # python 2.3, 2.4 version
+            SimpleXMLRPCDispatcher.__init__(self)
         self.authorized_users = None
         
     def read_config(self, section=None, configfile=None):
