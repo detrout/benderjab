@@ -86,10 +86,9 @@ class BenderJab(object):
           else:
               loglevel = logging.DEBUG
       
-      print levelname, loglevel
       logging.basicConfig(level=loglevel,
                           format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s')
-
+      logging.info("Debug level set to: %s (%d)" % (levelname, loglevel))
 
   def _parse_user_list(self, user_list, require_resource=False):
     """
