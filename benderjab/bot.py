@@ -14,6 +14,7 @@ import re
 import signal
 import sys
 import time
+import traceback
 import types
 
 import xmpp
@@ -360,7 +361,8 @@ class BenderJab(object):
             reply = self.parser(body, who)
         except Exception, e:
             reply = u"Exception: " + unicode(e)
-            self.log.error(u"Exception in messageCB. "+unicode(e))
+            logging.error(u"Exception in messageCB. "+unicode(e))
+            logging.debug(traceback.format_exc())
     else:
         reply = u"Authorization Error."
 
@@ -386,24 +388,29 @@ class BenderJab(object):
     return reply
 
   def presenceCB(self, conn, msg):
-    presence_type = msg.getType()
-    who = msg.getFrom()
-    # This code provides for a fairly promiscous bot
-    # a more secure bot should check an auth list and accept deny
-    # based on the incoming who JID
-    if presence_type == "subscribe":
-      # Tell the server that we accept their subscription request
-      conn.send(xmpp.Presence(to=who, typ='subscribed'))
-      # Ask to be their contact too
-      conn.send(xmpp.Presence(to=who, typ='subscribe'))
-      # Be friendly
-      conn.send(xmpp.Message(who, "hi " + who.getNode(), typ='chat'))
-      logging.info("%s subscribed" % (who))
-    elif presence_type == "unsubscribe":
-      conn.send(xmpp.Message(who, "bye " + who.getNode(), typ='chat'))
-      conn.send(xmpp.Presence(to=who, typ='unsubscribed'))
-      conn.send(xmpp.Presence(to=who, typ='unsubscribe'))
-      logging.info("%s unsubscribed" % (who))
+    try:
+      presence_type = msg.getType()
+      who = msg.getFrom()
+      # This code provides for a fairly promiscous bot
+      # a more secure bot should check an auth list and accept deny
+      # based on the incoming who JID
+      if presence_type == "subscribe":
+        # Tell the server that we accept their subscription request
+        conn.send(xmpp.Presence(to=who, typ='subscribed'))
+        # Ask to be their contact too
+        conn.send(xmpp.Presence(to=who, typ='subscribe'))
+        # Be friendly
+        conn.send(xmpp.Message(who, "hi " + who.getNode(), typ='chat'))
+        logging.info("%s subscribed" % (who))
+      elif presence_type == "unsubscribe":
+        conn.send(xmpp.Message(who, "bye " + who.getNode(), typ='chat'))
+        conn.send(xmpp.Presence(to=who, typ='unsubscribed'))
+        conn.send(xmpp.Presence(to=who, typ='unsubscribe'))
+        logging.info("%s unsubscribed" % (who))
+    except Exception, e:
+      logging.error("Exception in presenceCB " + str(e))
+      logging.debug(traceback.format_exc())
+
 
   def step(self, conn, timeout):
     """single step through the event loop"""
