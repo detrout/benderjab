@@ -431,16 +431,21 @@ class BenderJab(object):
     if self.cl is None:
         self.logon()
         
-    step_timeout = self.cfg['timeout']
-    if timeout is None:
-      while self.step(self.cl, step_timeout):
-        pass
-    else:
-      tstart = time.time()
-      while self.step(self.cl, step_timeout) and timeout > 0:
-        tnow = time.time()
-        timeout -= (tnow - tstart)
-        tstart = tnow
+    try:
+        step_timeout = self.cfg['timeout']
+        if timeout is None:
+            while self.step(self.cl, step_timeout):
+                pass
+        else:
+            tstart = time.time()
+            while self.step(self.cl, step_timeout) and timeout > 0:
+                tnow = time.time()
+                timeout -= (tnow - tstart)
+                tstart = tnow
+    except Exception, e:
+      logging.error("Fatal Exception " + str(e))
+      logging.debug(traceback.format_exc())
+   
     return
 
   def disconnect(self):
