@@ -430,7 +430,7 @@ class BenderJab(object):
         pass
     else:
       tstart = time.time()
-      while self.eventStep(self.cl, step_timeout) and timeout > 0:
+      while self.step(self.cl, step_timeout) and timeout > 0:
         tnow = time.time()
         timeout -= (tnow - tstart)
         tstart = tnow
