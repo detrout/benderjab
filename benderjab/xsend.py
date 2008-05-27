@@ -3,6 +3,7 @@
 # Copyright 2007 Diane Trout
 # This software is covered by the GNU Lesser Public License 2.1
 #
+import optparse
 import os
 import random
 import sys
@@ -65,19 +66,48 @@ def send(tojid, text, profile=None):
 
   # hang up politely
   cl.disconnect()
+
+def wait_for_pid(pid, timeout=10):
+    """
+    Wait for a process id to disappear before returning
+
+    pid is the process id to watch
+    time out is how long in seconds to wait between polls
+    """
     
-def main(args=None):
-    if args is None:
-        args = sys.argv
+    while True:
+        try:
+            os.kill(pid, 0)
+        except OSError, e:
+            # there is no PID, return
+            return
+        time.sleep(timeout)
+
+def make_parser():
+    usage = "%prog: [options] jabber-id message..."
+    parser = optparse.OptionParser()
+
+    parser.add_option('--wait-for-pid', type='int',
+           help="Wait for a process ID to exit before sending message",
+           default=None)
+
+    return parser
+
+def main(cmdline=None):
+    parser = make_parser()
+    opt, args = parser.parse_args(cmdline)
 
     if len(args) < 2:
-        print "Syntax: xsend JID text"
-        return 1
+        parser.error("Need JabberID and a message")
+
+    if opt.wait_for_pid is not None:
+        wait_for_pid(opt.wait_for_pid)
 
     # parse command line arguments
     tojid=args[1]
-    text=' '.join(args[2:])
-    send(tojid, text)
+    message=' '.join(args[2:])
+
+    send(tojid, message)
     return 0
 
 if __name__ == "__main__":
