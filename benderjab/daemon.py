@@ -23,7 +23,6 @@ References:
 
 # Standard Python modules.
 import errno
-import logging
 import os               # Miscellaneous OS interfaces.
 import sys              # System-specific parameters and functions.
 
@@ -105,7 +104,7 @@ def createDaemon():
          pid = os.fork()	# Fork a second child.
       except OSError, e:
          raise Exception, "%s [%d]" % (e.strerror, e.errno)
-
+    
       if (pid == 0):	# The second child.
          # Since the current working directory may be a mounted filesystem, we
          # avoid the issue of not being able to unmount the filesystem at
@@ -153,32 +152,48 @@ def createDaemon():
    # that can be opened by this process.  If there is not limit on the
    # resource, use the default value.
    #
-   import resource		# Resource usage information.
-   maxfd = resource.getrlimit(resource.RLIMIT_NOFILE)[1]
-   if (maxfd == resource.RLIM_INFINITY):
-      maxfd = MAXFD
-  
-   # Iterate through and close all file descriptors.
-   for fd in range(0, maxfd):
-      try:
-         os.close(fd)
-      except OSError:	# ERROR, fd wasn't open to begin with (ignored)
-         pass
-
-   # Redirect the standard I/O file descriptors to the specified file.  Since
-   # the daemon has no controlling terminal, most daemons redirect stdin,
-   # stdout, and stderr to /dev/null.  This is done to prevent side-effects
-   # from reads and writes to the standard I/O file descriptors.
-
-   # This call to open is guaranteed to return the lowest file descriptor,
-   # which will be 0 (stdin), since it was closed above.
-   os.open(REDIRECT_TO, os.O_RDWR)	# standard input (0)
-
-   # Duplicate standard input to standard output and standard error.
-   os.dup2(0, 1)			# standard output (1)
-   os.dup2(0, 2)			# standard error (2)
+   closeStdio()
 
    return(0)
+
+def closeStdio():
+    """
+    Close the standard i/o file descriptors
+    """
+    import resource		# Resource usage information.
+    maxfd = resource.getrlimit(resource.RLIMIT_NOFILE)[1]
+    if (maxfd == resource.RLIM_INFINITY):
+        maxfd = MAXFD
+  
+    try:
+        # Iterate through and close all file descriptors.
+        for fd in reversed(range(maxfd)):
+            try:
+                os.close(fd)
+            except OSError, e:	# ERROR, fd wasn't open to begin with (ignored)
+                if e.errno == errno.EBADF:
+                    # File descrptor was not open
+                    pass
+                else:
+                    raise e
+
+        # Redirect the standard I/O file descriptors to the specified file.  Since
+        # the daemon has no controlling terminal, most daemons redirect stdin,
+        # stdout, and stderr to /dev/null.  This is done to prevent side-effects
+        # from reads and writes to the standard I/O file descriptors.
+
+        # This call to open is guaranteed to return the lowest file descriptor,
+        # which will be 0 (stdin), since it was closed above.
+        daemon_fd = os.open(REDIRECT_TO, os.O_RDWR)	# standard input (0)
+
+        # Duplicate standard input to standard output and standard error.
+        os.dup2(daemon_fd, sys.stdin.fileno())			# standard output (1)
+        os.dup2(daemon_fd, sys.stdout.fileno())			# standard output (1)
+        os.dup2(daemon_fd, sys.stderr.fileno())			# standard error (2)
+    except NotImplementedError, e:
+        panic = open('paniclog.log', 'w+')
+        panic.write(unicode(e))
+        raise e
 
 def readPidFile(filename):
     """
@@ -188,9 +203,11 @@ def readPidFile(filename):
     try:
         return int(open(filename).read().strip())
     except ValueError:
-        logging.error(u"pidfile %s doesn't contain a pid" % (filename))
+        error = u"pidfile %s doesn't contain a pid" % (filename)
+        print error
     except IOError, e:
-        logging.error(u"IOError reading %s: %s" % (filename, unicode(e)))
+        error = u"IOError reading %s: %s" % (filename, unicode(e))
+        print error
     return None
    
 
@@ -212,7 +229,9 @@ def removePidFile(filename):
         os.remove(filename)
     else:
         # its not our pid
-        logging.error("PID in %s (%d) is not our PID (%s)" % (filename, pid, os.getpid()))
+        error = "PID in %s (%d) is not our PID (%s)" % (filename, pid, os.getpid())
+        print error
+
     
 
 def checkPidFileIsSafeToRun(filename):
@@ -238,10 +257,10 @@ def checkPidFileIsSafeToRun(filename):
                 os.remove(filename)
                 return True
             else:
-                logging.error("failed checking status of pid %d in file %s" % (pid, filename))
+                error = "failed checking status of pid %d in file %s" % (pid, filename)
+                print error
                 return False
         else:
-            #logging.warning("Another instance seems to be running (pid %d)" %(pid))
             print "Another instance seems to be running (pid %d)" %(pid)
             
             return False

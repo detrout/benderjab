@@ -7,7 +7,7 @@ import commands
 import errno
 from getpass import getpass
 import logging
-from logging.handlers import RotatingFileHandler
+from logging import FileHandler
 from optparse import OptionParser
 import os
 import re
@@ -21,7 +21,7 @@ import xmpp
 
 from benderjab import util
 from benderjab import daemon
- 
+
 class JIDMissingResource(RuntimeError):
     """
     XML RPC calls need the full jabber ID + resource to work
@@ -60,7 +60,6 @@ class BenderJab(object):
     self.cl = None
     self.parser = self._parser
     self.eventTasks = []
-    self.log = logging.getLogger('benderjab.bot')
     
   def configure_logging(self):
       """
@@ -87,8 +86,12 @@ class BenderJab(object):
           else:
               loglevel = logging.DEBUG
       
+      self.loglevel = loglevel
+
       logging.basicConfig(level=loglevel,
-                          format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s')
+                          format='%(asctime)s %(name)-6s %(levelname)-8s %(message)s',
+                          filename=self.log_filename)
+
       logging.info("Debug level set to: %s (%d)" % (levelname, loglevel))
 
   def _parse_user_list(self, user_list, require_resource=False):
@@ -233,10 +236,7 @@ class BenderJab(object):
           if not os.path.exists(opt.configfile):
               opt_parser.error("unable to find %s" % (opt.options.configfile))
       self.read_config(opt.section, opt.configfile)
-      
-      self.configure_logging()
-      logging.debug("Options: " + " ".join(saved_args))
-
+     
       if opt.jid is not None:
           self.cfg['jid'] = opt.jid
       if opt.resource is not None:
@@ -253,19 +253,15 @@ class BenderJab(object):
       """
       Things to do when detaching from the terminal
       """
-      logger = logging.getLogger()
-      # limit log size to 1 megabyte
-      m = 1024 **2
-      file_handler = RotatingFileHandler(self.log_filename, 'a',m)
-      file_handler.doRollover()
-      logger.addHandler(file_handler)
-      logging.debug('detaching from console')
+
+      print 'detaching from console'
       daemon.createDaemon()
       
   def start(self, daemonize):
       if daemon.checkPidFileIsSafeToRun(self.pid_filename):
           if daemonize:
               self.daemonize()
+          self.configure_logging()
           self.register_signal_handlers()
           daemon.writePidFile(self.pid_filename)
           logging.critical("starting up")
@@ -273,13 +269,14 @@ class BenderJab(object):
               self.run()
           except (KeyboardInterrupt, SystemExit):
               pass
-          except Exception, e:
-              logging.fatal(u'Fatal Exception: ' + unicode(e))
+          #except Exception, e:
+          #    errmsg = u'Fatal Exception: ' + unicode(e)
+          #    print errmsg
               
           # indicate shutting down
           logging.warn("shutting down. (%d)" % (os.getpid()))
-          logging.shutdown()
           daemon.removePidFile(self.pid_filename)
+          logging.shutdown()
   
   def stop(self):
       if os.path.exists(self.pid_filename):
@@ -291,7 +288,8 @@ class BenderJab(object):
               os.kill(pid, signal.SIGTERM)
           except OSError, (code, text):
               if code == errno.ESRCH:
-                  logging.warning("PID %d isn't running" % (pid))
+                  errmsg = "PID %d isn't running" % (pid)
+                  print errmsg
       else:
           msg = "No pidfile at %s, assuming nothing is running"
           logging.info(msg % (self.pid_filename))
@@ -353,7 +351,7 @@ class BenderJab(object):
     body = msg.getBody()
      
     if body is None:
-        logging.debug(u"FROM: <%s>: sent empty packet" %(unicode(who)))
+        #logging.debug(u"FROM: <%s>: sent empty packet" %(unicode(who)))
         return None
     elif self.check_authorization(who):
         try:
@@ -430,7 +428,7 @@ class BenderJab(object):
     """
     if self.cl is None:
         self.logon()
-        
+
     try:
         step_timeout = self.cfg['timeout']
         if timeout is None:
@@ -445,7 +443,7 @@ class BenderJab(object):
     except Exception, e:
       logging.error("Fatal Exception " + str(e))
       logging.debug(traceback.format_exc())
-   
+  
     return
 
   def disconnect(self):
