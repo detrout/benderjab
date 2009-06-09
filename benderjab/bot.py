@@ -61,7 +61,7 @@ class BenderJab(object):
     self.parser = self._parser
     self.eventTasks = []
     
-  def configure_logging(self):
+  def configure_logging(self, have_console=False):
       """
       Set up log
       """
@@ -88,9 +88,14 @@ class BenderJab(object):
       
       self.loglevel = loglevel
 
-      logging.basicConfig(level=loglevel,
-                          format='%(asctime)s %(name)-6s %(levelname)-8s %(message)s',
-                          filename=self.log_filename)
+      log_format = '%(asctime)s %(name)-6s %(levelname)-8s %(message)s'
+      if have_console:
+          logging.basicConfig(level=loglevel, format=log_format)
+      else:
+          # we're detached from the console, so we need to log to a file
+          logging.basicConfig(level=loglevel, 
+                              format=log_format, 
+                              filename=self.log_filename)
 
       logging.info("Debug level set to: %s (%d)" % (levelname, loglevel))
 
@@ -261,7 +266,8 @@ class BenderJab(object):
       if daemon.checkPidFileIsSafeToRun(self.pid_filename):
           if daemonize:
               self.daemonize()
-          self.configure_logging()
+          have_console = not daemonize
+          self.configure_logging(have_console=have_console)
           self.register_signal_handlers()
           daemon.writePidFile(self.pid_filename)
           logging.critical("starting up")
