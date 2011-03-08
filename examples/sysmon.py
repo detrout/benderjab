@@ -7,7 +7,50 @@ import re
 import sys
 import xmpp
 
-from benderjab.bot import BenderFactory
+from benderjab.bot import BenderJab
+
+def main(args=None):
+    bot = SysmonBot()
+    bot.main(args[1:])
+    return 0
+
+class SysmonBot(BenderJab):
+    def __init__(self):
+        super(SysmonBot, self).__init__()
+
+        self.presence = ''
+        self.eventTasks.append(SysmonBot.update_load)
+    
+    def _parser(self, message, who=None):
+        reply = ""
+        try:
+            if re.match("uptime", message, re.IGNORECASE):
+                reply = read_linux_uptime()
+            elif re.match("time", message, re.IGNORECASE):
+                reply = "Server time is "+time.asctime()
+            elif re.match("unknown command", message, re.IGNORECASE):
+                return ''
+            else:
+                reply = "Unknown command", message
+        except Exception, e:
+            return "failed:"+str(e)
+        return reply
+    
+    def update_load(self):
+        loadavg = read_linux_uptime()
+        one,five,fifteen,process = parse_uptime(loadavg)
+        if one > 10.0:
+            presence = 'xa'
+        elif one > 5.0:
+            presence = 'dnd'
+        elif one > 1.0:
+            presence = 'away'
+        else:
+            presence = ''
+            
+        if self.presence != presence:
+            self.presence = presence
+            bot.cl.send(xmpp.Presence(show=presence, status=loadavg))
 
 def read_linux_uptime():
   """So I don't have to keep retyping /proc/loadavg
@@ -24,52 +67,6 @@ def parse_uptime(loadavg):
   fifteen = float(loadavg[2])
   process = loadavg[3]
   return (one,five,fifteen,process)
-
-def parser(message, who=None):
-  reply = ""
-  try:
-    if re.match("uptime", message):
-      reply = read_linux_uptime()
-    elif re.match("time", message):
-      reply = "Server time is "+time.asctime()
-    else:
-      reply = "Unknown command:", message
-  except Exception, e:
-    return "failed:"+str(e)
-  return reply
-
-class update_presence(object):
-  def __init__(self):
-    self.presence = ''
-    
-  def __call__(self, bot):
-    loadavg = read_linux_uptime()
-    one,five,fifteen,process = parse_uptime(loadavg)
-    if one > 10.0:
-      presence = 'xa'
-    elif one > 5.0:
-      presence = 'dnd'
-    elif one > 1.0:
-      presence = 'away'
-    else:
-      presence = ''
-    if self.presence != presence:
-      self.presence = presence
-      bot.cl.send(xmpp.Presence(show=presence, status=loadavg))
-
-def main(args=None):
-  if args is not None and len(args) > 1:
-    bot = BenderFactory(args[1])
-  else:
-    bot = BenderFactory()
-
-  # lets not overload already overloaded systems, wait 5 seconds between
-  # updates
-  bot.parser = parser
-  bot.eventTasks.append(update_presence())
-  bot.logon()
-  bot.eventLoop()
-  return 0
 
 if __name__ == "__main__":
   sys.exit(main(sys.argv))
