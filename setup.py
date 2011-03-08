@@ -8,6 +8,7 @@ from setuptools import setup
 setup(
     name='BenderJab',
     description='A jabber bot and some utilities',
+    version="0.2",
     author='Diane Trout',
     author_email='diane@ghic.org',
     packages=['benderjab'],

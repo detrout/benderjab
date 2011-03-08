@@ -5,9 +5,12 @@
 #
 import commands
 import errno
+from email.mime.text import MIMEText
+import smtplib
 from getpass import getpass
 import logging
 from logging import FileHandler
+from logging.handlers import TimedRotatingFileHandler
 from optparse import OptionParser
 import os
 import re
@@ -21,6 +24,9 @@ import xmpp
 
 from benderjab import util
 from benderjab import daemon
+
+MAILTO_PROTO = 'mailto:'
+JABBER_PROTO = 'jabber:'
 
 class JIDMissingResource(RuntimeError):
     """
@@ -54,12 +60,16 @@ class BenderJab(object):
     self.cfg['pid'] = "/tmp/%(jid)s.%(resource)s.pid"
     self.cfg['log'] = "/tmp/%(jid)s.%(resource)s.log"
     self.cfg['loglevel'] = "WARNING"
+    self.cfg['smtpserver'] = 'localhost'
+    self.cfg['smtpport'] = 25
         
     # set defaults for things that can't be set from a config file
     self.authorized_users = None
     self.cl = None
     self.parser = self._parser
     self.eventTasks = []
+
+    self.log = None
     
   def configure_logging(self, have_console=False):
       """
@@ -89,15 +99,23 @@ class BenderJab(object):
       self.loglevel = loglevel
 
       log_format = '%(asctime)s %(name)-6s %(levelname)-8s %(message)s'
-      if have_console:
-          logging.basicConfig(level=loglevel, format=log_format)
-      else:
-          # we're detached from the console, so we need to log to a file
-          logging.basicConfig(level=loglevel, 
-                              format=log_format, 
-                              filename=self.log_filename)
+      formatter = logging.Formatter(log_format)
+      
+      self.log = logging.getLogger(self.jid)
+      self.log.setLevel(self.loglevel)
 
-      logging.info("Debug level set to: %s (%d)" % (levelname, loglevel))
+      if have_console:
+          console = logging.StreamHandler()
+          console.setFormatter(formatter)
+          self.log.addHandler(console)
+
+      if self.log_filename is not None:
+          logfile = TimedRotatingFileHandler(
+              self.log_filename,'midnight',1,14)
+          logfile.setFormatter(formatter)
+          self.log.addHandler(logfile)
+
+      self.log.info("Debug level set to: %s (%d)" % (levelname, loglevel))
 
   def _parse_user_list(self, user_list, require_resource=False):
     """
@@ -133,7 +151,6 @@ class BenderJab(object):
     """
     if self.cfg[name] is None:
       errmsg="Please specify %s in the configfile" % (name)
-      logging.fatal(errmsg)
       raise RuntimeError(errmsg)
     else:
       return self.cfg[name]
@@ -270,7 +287,7 @@ class BenderJab(object):
           self.configure_logging(have_console=have_console)
           self.register_signal_handlers()
           daemon.writePidFile(self.pid_filename)
-          logging.critical("starting up")
+          self.log.critical("starting up")
           try:
               self.run()
           except (KeyboardInterrupt, SystemExit):
@@ -280,7 +297,7 @@ class BenderJab(object):
           #    print errmsg
               
           # indicate shutting down
-          logging.warn("shutting down. (%d)" % (os.getpid()))
+          self.log.warn("shutting down. (%d)" % (os.getpid()))
           daemon.removePidFile(self.pid_filename)
           logging.shutdown()
   
@@ -298,7 +315,11 @@ class BenderJab(object):
                   print errmsg
       else:
           msg = "No pidfile at %s, assuming nothing is running"
-          logging.info(msg % (self.pid_filename))
+          msg %= (self.pid_filename,)
+          print >>sys.stderr, msg
+          if self.log is not None:
+              self.log.info(msg % (self.pid_filename))
+          
   
   def restart(self, daemonize):
       self.stop()
@@ -342,14 +363,48 @@ class BenderJab(object):
     # not needed but lets me muck around with the client from interpreter
     return self.cl
   
-  def send(self, jid, message):
+  def send(self, address, message):
       """
       Send a message to specified user
       """
-      logging.debug(u"TO: <%s> " % (unicode(jid)) + unicode(message))
-      tojid = util.toJID(jid)
-      self.cl.send(xmpp.protocol.Message(tojid,typ='chat',body=unicode(message)))
 
+      address_type, address = self._parse_address(address)
+      body = unicode(message)
+          
+      if address_type == JABBER_PROTO:
+          self.log.debug(u"IMing: <%s> %s" % (unicode(address),body))
+          self.cl.send(xmpp.protocol.Message(address,typ='chat',body=body))
+      elif address_type == MAILTO_PROTO:
+          self._send_email(address, body)
+      elif address_type is None:
+          pass
+
+  def _parse_address(self, address):
+
+      if type(address) in types.StringTypes:
+          if address.startswith(MAILTO_PROTO):
+              return MAILTO_PROTO, address[len(MAILTO_PROTO):]
+          elif address.startswith(JABBER_PROTO):
+              return JABBER_PROTO,  util.toJID(address[len(JABBER_PROTO):])
+          else:
+              return JABBER_PROTO, address
+      elif isinstance(address, xmpp.JID):
+          return JABBER_PROTO, address
+      else:
+          self.log.error(u"Unrecognized address %s" % (unicode(address)))
+          return None, None
+
+  def _send_email(self, address, body):
+      # email address
+      msg = MIMEText(body)
+      msg['Subject'] = body
+      msg['From'] = self.jid
+      msg['To'] = address
+      self.log.debug(u"EMAILing: <%s> %s" % (unicode(address), msg.as_string()))
+      s = smtplib.SMTP('localhost',2525)
+      s.sendmail(self.jid, [address], msg.as_string())
+      s.quit()
+          
   def messageCB(self, conn, msg):
     """Simple handling of messages
     """
@@ -357,16 +412,16 @@ class BenderJab(object):
     body = msg.getBody()
      
     if body is None:
-        #logging.debug(u"FROM: <%s>: sent empty packet" %(unicode(who)))
+        #self.log.debug(u"FROM: <%s>: sent empty packet" %(unicode(who)))
         return None
     elif self.check_authorization(who):
         try:
-            logging.debug(u"FROM: <%s> " % (unicode(who)) + unicode(body))
+            self.log.debug(u"FROM: <%s> " % (unicode(who)) + unicode(body))
             reply = self.parser(body, who)
         except Exception, e:
             reply = u"Exception: " + unicode(e)
-            logging.error(u"Exception in messageCB. "+unicode(e))
-            logging.debug(traceback.format_exc())
+            self.log.error(u"Exception in messageCB. "+unicode(e))
+            self.log.debug(traceback.format_exc())
     else:
         reply = u"Authorization Error."
 
@@ -385,7 +440,7 @@ class BenderJab(object):
     elif re.match("uptime", message):
       reply = commands.getoutput("uptime")
     elif re.match("Exception:", message):
-      logging.warning("Received Exception: " + message)
+      self.log.warning("Received Exception: " + message)
       reply = None
     else:
       reply = "I have no idea what \""+message+"\" means."
@@ -405,15 +460,15 @@ class BenderJab(object):
         conn.send(xmpp.Presence(to=who, typ='subscribe'))
         # Be friendly
         conn.send(xmpp.Message(who, "hi " + who.getNode(), typ='chat'))
-        logging.info("%s subscribed" % (who))
+        self.log.info("%s subscribed" % (who))
       elif presence_type == "unsubscribe":
         conn.send(xmpp.Message(who, "bye " + who.getNode(), typ='chat'))
         conn.send(xmpp.Presence(to=who, typ='unsubscribed'))
         conn.send(xmpp.Presence(to=who, typ='unsubscribe'))
-        logging.info("%s unsubscribed" % (who))
+        self.log.info("%s unsubscribed" % (who))
     except Exception, e:
-      logging.error("Exception in presenceCB " + str(e))
-      logging.debug(traceback.format_exc())
+      self.log.error("Exception in presenceCB " + str(e))
+      self.log.debug(traceback.format_exc())
 
 
   def step(self, conn, timeout):
@@ -447,8 +502,8 @@ class BenderJab(object):
                 timeout -= (tnow - tstart)
                 tstart = tnow
     except Exception, e:
-      logging.error("Fatal Exception " + str(e))
-      logging.debug(traceback.format_exc())
+      self.log.error("Fatal Exception " + str(e))
+      self.log.debug(traceback.format_exc())
   
     return
 

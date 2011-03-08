@@ -23,17 +23,19 @@ class SysmonBot(BenderJab):
     
     def _parser(self, message, who=None):
         reply = ""
+
         try:
             if re.match("uptime", message, re.IGNORECASE):
                 reply = read_linux_uptime()
             elif re.match("time", message, re.IGNORECASE):
                 reply = "Server time is "+time.asctime()
             elif re.match("unknown command", message, re.IGNORECASE):
-                return ''
+                reply = ''
             else:
                 reply = "Unknown command", message
         except Exception, e:
             return "failed:"+str(e)
+
         return reply
     
     def update_load(self):
