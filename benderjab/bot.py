@@ -126,12 +126,31 @@ class BenderJab(object):
     
     parsed_list = []
     for user in user_list.split():
-        jid = util.toJID(user)
-        if require_resource and len(jid.resource) == 0:
-            msg = 'need a resource identifier for the Jabber ID'
-            raise JIDMissingResource(msg)
-        parsed_list.append(jid)
+        proto, address = self._parse_address(user)
+        if proto == MAILTO_PROTO:
+            parsed_list.append(address)
+        elif proto == MAILTO_JABBER:
+            jid = util.toJID(address)
+            if require_resource and len(jid.resource) == 0:
+                msg = 'need a resource identifier for the Jabber ID'
+                raise JIDMissingResource(msg)
+            parsed_list.append(jid)
     return parsed_list
+
+  def _parse_address(self, address):
+      if type(address) in types.StringTypes:
+          if address.startswith(MAILTO_PROTO):
+              return MAILTO_PROTO, address[len(MAILTO_PROTO):]
+          elif address.startswith(JABBER_PROTO):
+              return JABBER_PROTO,  util.toJID(address[len(JABBER_PROTO):])
+          else:
+              return JABBER_PROTO, address
+      elif isinstance(address, xmpp.JID):
+          return JABBER_PROTO, address
+      else:
+          self.log.error(u"Unrecognized address %s" % (unicode(address)))
+          return None, None
+
             
   def check_authorization(self, who):
     """
@@ -378,21 +397,6 @@ class BenderJab(object):
           self._send_email(address, body)
       elif address_type is None:
           pass
-
-  def _parse_address(self, address):
-
-      if type(address) in types.StringTypes:
-          if address.startswith(MAILTO_PROTO):
-              return MAILTO_PROTO, address[len(MAILTO_PROTO):]
-          elif address.startswith(JABBER_PROTO):
-              return JABBER_PROTO,  util.toJID(address[len(JABBER_PROTO):])
-          else:
-              return JABBER_PROTO, address
-      elif isinstance(address, xmpp.JID):
-          return JABBER_PROTO, address
-      else:
-          self.log.error(u"Unrecognized address %s" % (unicode(address)))
-          return None, None
 
   def _send_email(self, address, body):
       # email address
