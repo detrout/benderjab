@@ -129,7 +129,7 @@ class BenderJab(object):
         proto, address = self._parse_address(user)
         if proto == MAILTO_PROTO:
             parsed_list.append(address)
-        elif proto == MAILTO_JABBER:
+        elif proto == JABBER_PROTO:
             jid = util.toJID(address)
             if require_resource and len(jid.resource) == 0:
                 msg = 'need a resource identifier for the Jabber ID'
