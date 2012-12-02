@@ -101,7 +101,7 @@ class BenderJab(object):
       log_format = '%(asctime)s %(name)-6s %(levelname)-8s %(message)s'
       formatter = logging.Formatter(log_format)
 
-      self.log = logging.getLogger(self.jid)
+      self.log = logging.getLogger(self.jid.getStripped())
       self.log.setLevel(self.loglevel)
 
       if have_console:
@@ -240,7 +240,8 @@ class BenderJab(object):
   log_filename = property(_get_log_filename, doc="name of file to store our log in")
 
   def _get_jid(self):
-      return self.cfg['jid']
+      if self.cfg['jid']:
+          return util.toJID(self.cfg['jid'])
   def _set_jid(self, jid):
       if self.cl is None:
           self.cfg['jid'] = util.toJID(jid)
@@ -422,7 +423,7 @@ class BenderJab(object):
         try:
             self.log.debug(u"FROM: <%s> " % (unicode(who)) + unicode(body))
             reply = self.parser(body, who)
-        except Exception, e:
+        except Exception as e:
             reply = u"Exception: " + unicode(e)
             self.log.error(u"Exception in messageCB. "+unicode(e))
             self.log.debug(traceback.format_exc())
