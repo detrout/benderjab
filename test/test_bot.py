@@ -9,9 +9,7 @@ import xmlrpclib
 
 import xmpp
 
-class FakeClient:
-    def send(self, msg):
-        self.msg = msg
+from .mock import MockClient
 
 class TestBot(unittest.TestCase):
     def test_getter_setters(self):
@@ -73,7 +71,7 @@ class TestBot(unittest.TestCase):
         b = bot.BenderJab()
         user_list = "user1@example.fake other@fake.example"
         b.authorized_users = b._parse_user_list(user_list)
-        b.cl = FakeClient()
+        b.cl = MockClient()
         b.configure_logging()
 
         fromjid = util.toJID('user1@example.fake')
@@ -81,14 +79,14 @@ class TestBot(unittest.TestCase):
         body = u"test message"
         msg=xmpp.protocol.Message(tojid,body=body,typ='chat', frm=fromjid)
         b.messageCB(b.cl, msg)
-        response = b.cl.msg.getBody()
+        response = b.cl.msgs[-1].getBody()
         valid = 'I have no idea what "test message" means.'
         self.failUnlessEqual(valid, response)
 
         fromjid = util.toJID('eviluser@example.fake')
         msg=xmpp.protocol.Message(tojid,body=body,typ='chat', frm=fromjid)
         b.messageCB(b.cl, msg)
-        response = b.cl.msg.getBody()
+        response = b.cl.msgs[-1].getBody()
         self.failUnlessEqual('Authorization Error.', response)
 
     def test_check_jid_resource(self):
@@ -104,6 +102,7 @@ class TestBot(unittest.TestCase):
                             b._parse_user_list,
                             users_bad,
                             require_resource=True)
+
 
 def suite():
     return unittest.makeSuite(TestBot)
