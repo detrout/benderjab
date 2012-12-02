@@ -103,7 +103,7 @@ def test_logon(jid):
 
 def makeOptionParser():
   parser = OptionParser()
-  
+
   parser.set_defaults(verbose=False)
   parser.add_option('-v', '--verbose', action='store_true', dest='verbose',
                     help="report what I'm doing")
@@ -127,7 +127,7 @@ def main(argv=None):
 
   parser = makeOptionParser()
   opt, arguments = parser.parse_args(argv)
-  
+
   if opt.register_jid is not None:
     if opt.verbose: print "register", opt.register_jid
     register(opt.register_jid, opt.email)

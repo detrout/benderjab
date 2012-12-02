@@ -14,7 +14,7 @@ class fake_conn(object):
    def send(self, msg):
      self.messages.append(msg)
 
-  
+
 class TestRPC(unittest.TestCase):
     def test_xmlrpc_pack_unpack(self):
         params = (1,2,['a','b'])
@@ -26,7 +26,7 @@ class TestRPC(unittest.TestCase):
         unmarshaled = xmlrpclib.loads(return_xml)
         # loads returns (params, methodname)
         self.failUnlessEqual(unmarshaled[0], params)
-        
+
     # FIXME: figure out xmlrpc_error_iq api
     #def test_xmlrpc_error(self):
     #    """
@@ -39,7 +39,7 @@ class TestRPC(unittest.TestCase):
     #    iq = rpc.make_iq(tojid, typ, marshaled, msgid=None)
     #    error = xsend.xmlrpc_error_iq(tojid, 500, 'error', iq)
     #    print error
-    #     
+    #
     #    # def error_iq(who, errcode, body, msgid=None):
 
     def test_xmlrpcbot(self):
@@ -66,4 +66,3 @@ def suite():
 
 if __name__ == "__main__":
   unittest.main(defaultTest="suite")
-

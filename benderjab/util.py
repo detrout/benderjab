@@ -21,7 +21,7 @@ def toJID(jid):
   """
   if type(jid) in types.StringTypes:
     return xmpp.protocol.JID(jid)
-  else: 
+  else:
     return jid
 
 def get_checked_password(jid, password=None):
@@ -99,5 +99,5 @@ def get_config(profile=None, filename='~/.benderjab'):
   if params == default:
     print "Please edit",filename,"to include a valid JID for sending messages"
     return None
-  
+
   return params

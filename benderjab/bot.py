@@ -42,14 +42,14 @@ class BenderJab(object):
   """
   # override to change default config file
   configfile = "~/.benderjab"
-  
+
   def __init__(self, section=None, configfile=None):
     """Initialize our bot
     """
     self.section = section
     if configfile is not None:
         self.configfile = configfile
-    
+
     # set defaults
     self.cfg = {}
     self.cfg['jid'] = None
@@ -62,7 +62,7 @@ class BenderJab(object):
     self.cfg['loglevel'] = "WARNING"
     self.cfg['smtpserver'] = 'localhost'
     self.cfg['smtpport'] = 25
-        
+
     # set defaults for things that can't be set from a config file
     self.authorized_users = None
     self.cl = None
@@ -70,13 +70,13 @@ class BenderJab(object):
     self.eventTasks = []
 
     self.log = None
-    
+
   def configure_logging(self, have_console=False):
       """
       Set up log
       """
       levelname = self.cfg['loglevel']
-      
+
       if levelname is None:
           loglevel = logging.DEBUG
       else:
@@ -95,12 +95,12 @@ class BenderJab(object):
               loglevel = logging.FATAL
           else:
               loglevel = logging.DEBUG
-      
+
       self.loglevel = loglevel
 
       log_format = '%(asctime)s %(name)-6s %(levelname)-8s %(message)s'
       formatter = logging.Formatter(log_format)
-      
+
       self.log = logging.getLogger(self.jid)
       self.log.setLevel(self.loglevel)
 
@@ -123,7 +123,7 @@ class BenderJab(object):
     """
     if user_list is None:
         return None
-    
+
     parsed_list = []
     for user in user_list.split():
         proto, address = self._parse_address(user)
@@ -151,19 +151,19 @@ class BenderJab(object):
           self.log.error(u"Unrecognized address %s" % (unicode(address)))
           return None, None
 
-            
+
   def check_authorization(self, who):
     """
     Check our sender against the allowed list of users
     """
     if self.authorized_users is None:
         return True
-    
+
     for user in self.authorized_users:
       if who.bareMatch(user):
         return True
     return False
-    
+
   def _check_required_option(self, name):
     """
     Check cfg for a required option
@@ -173,21 +173,21 @@ class BenderJab(object):
       raise RuntimeError(errmsg)
     else:
       return self.cfg[name]
-  
+
   def read_config(self, section=None, configfile=None):
       """
-      Grab all the parameters from [section] in configfile 
+      Grab all the parameters from [section] in configfile
       (and check in [hostname] and [default] as well)
       """
       if section is None:
           section = self.section
       if configfile is None:
           configfile = self.configfile
-          
+
       self.cfg.update(util.get_config(section, configfile))
-      
+
       self.authorized_users = self._parse_user_list(self.cfg.get('authorized_users', None))
-  
+
   def command_line_parser(self):
       """
       Return a configured parser object
@@ -199,7 +199,7 @@ class BenderJab(object):
                         help="the jabber id we should connect as")
       parser.add_option('--resource', dest='resource', default=None,
                         help='specify what resource name to use')
-                        
+
       parser.add_option('--start', dest='action', action='store_const', const='start',
                         default='start',
                         help='start the daemon (default)')
@@ -217,28 +217,28 @@ class BenderJab(object):
                         default=True,
                         help="Don't run in background")
       return parser
-  
+
   def _get_cfg_subset(self):
       """
       return a subset of config options for formatting of our *_filename functions
       """
       return { 'jid': self.cfg['jid'],
                'resource': self.cfg['resource']}
-               
+
   def _get_pid_filename(self):
       """
       format the pid filename
       """
       return self.cfg['pid'] % (self._get_cfg_subset())
   pid_filename = property(_get_pid_filename, doc="name of file to store our process ID in")
-  
+
   def _get_log_filename(self):
       """
       Format the log filename
       """
       return self.cfg['log'] % (self._get_cfg_subset())
   log_filename = property(_get_log_filename, doc="name of file to store our log in")
-  
+
   def _get_jid(self):
       return self.cfg['jid']
   def _set_jid(self, jid):
@@ -247,7 +247,7 @@ class BenderJab(object):
       else:
           raise ValueError("Already logged in, can't change jabber ID")
   jid = property(_get_jid, _set_jid, doc="set jabber ID")
-  
+
   def _get_resource(self):
       return self.cfg['resource']
   def _set_resource(self, resource):
@@ -256,13 +256,13 @@ class BenderJab(object):
       else:
           raise ValueError("Already logged in, can't change resource")
   resource = property(_get_resource, _set_resource, doc="set jabber resource ID")
-     
+
   def on_sigterm(self, signalnum, frame):
       raise KeyboardInterrupt("SIGTERM")
-      
+
   def register_signal_handlers(self):
       signal.signal(signal.SIGTERM, self.on_sigterm)
-      
+
   def main(self, args=None):
       """
       Parse command line, and start application
@@ -272,24 +272,24 @@ class BenderJab(object):
       saved_args = args
       opt_parser = self.command_line_parser()
       opt, args = opt_parser.parse_args(args)
-      
+
       if opt.configfile is not None:
           if not os.path.exists(opt.configfile):
               opt_parser.error("unable to find %s" % (opt.options.configfile))
       self.read_config(opt.section, opt.configfile)
-     
+
       if opt.jid is not None:
           self.cfg['jid'] = opt.jid
       if opt.resource is not None:
           self.cfg['resource'] = opt.resource
-          
+
       if opt.action == 'start':
           self.start(opt.daemon)
       elif opt.action ==  'stop':
           self.stop()
       elif opt.action == 'restart':
           self.restart(opt.daemon)
-          
+
   def daemonize(self):
       """
       Things to do when detaching from the terminal
@@ -297,7 +297,7 @@ class BenderJab(object):
 
       print 'detaching from console'
       daemon.createDaemon()
-      
+
   def start(self, daemonize):
       if daemon.checkPidFileIsSafeToRun(self.pid_filename):
           if daemonize:
@@ -314,18 +314,18 @@ class BenderJab(object):
           #except Exception, e:
           #    errmsg = u'Fatal Exception: ' + unicode(e)
           #    print errmsg
-              
+
           # indicate shutting down
           self.log.warn("shutting down. (%d)" % (os.getpid()))
           daemon.removePidFile(self.pid_filename)
           logging.shutdown()
-  
+
   def stop(self):
       if os.path.exists(self.pid_filename):
           pid = daemon.readPidFile(self.pid_filename)
           if pid is None:
               return
-      
+
           try:
               os.kill(pid, signal.SIGTERM)
           except OSError, (code, text):
@@ -338,13 +338,13 @@ class BenderJab(object):
           print >>sys.stderr, msg
           if self.log is not None:
               self.log.info(msg % (self.pid_filename))
-          
-  
+
+
   def restart(self, daemonize):
       self.stop()
       self.start(daemonize)
-      
-      
+
+
   def logon(self, jid=None, password=None, resource=None):
     """connect to server"""
     if jid is not None:
@@ -353,13 +353,13 @@ class BenderJab(object):
         self.cfg['password'] = password
     if resource is not None:
         self.cfg['resource'] = resource
-        
+
     if self.cfg['jid'] is None:
         raise ValueError("please set a jabber ID before logging in")
     if self.cfg['password'] is None:
         raise ValueError("please set a password before logging in")
-    
-    jid = util.toJID(self.cfg['jid'])    
+
+    jid = util.toJID(self.cfg['jid'])
     self.cl = xmpp.Client(jid.getDomain(), debug=[])
     # if you have dnspython installed and use_srv is True
     # the dns service discovery lookup seems to fail.
@@ -375,13 +375,13 @@ class BenderJab(object):
     # tell the xmpp client that we're ready to handle things
     self.cl.RegisterHandler('message', self.messageCB)
     self.cl.RegisterHandler('presence', self.presenceCB)
-  
+
     # announce our existence to the server
     self.cl.getRoster()
     self.cl.sendInitPresence()
     # not needed but lets me muck around with the client from interpreter
     return self.cl
-  
+
   def send(self, address, message):
       """
       Send a message to specified user
@@ -389,7 +389,7 @@ class BenderJab(object):
 
       address_type, address = self._parse_address(address)
       body = unicode(message)
-          
+
       if address_type == JABBER_PROTO:
           self.log.debug(u"IMing: <%s> %s" % (unicode(address),body))
           self.cl.send(xmpp.protocol.Message(address,typ='chat',body=body))
@@ -408,13 +408,13 @@ class BenderJab(object):
       s = smtplib.SMTP('localhost',2525)
       s.sendmail(self.jid, [address], msg.as_string())
       s.quit()
-          
+
   def messageCB(self, conn, msg):
     """Simple handling of messages
     """
     who = msg.getFrom()
     body = msg.getBody()
-     
+
     if body is None:
         #self.log.debug(u"FROM: <%s>: sent empty packet" %(unicode(who)))
         return None
@@ -430,9 +430,9 @@ class BenderJab(object):
         reply = u"Authorization Error."
 
     self.send(who, reply)
-          
+
   def _parser(self, message, who):
-    """Default parser function, 
+    """Default parser function,
     overide this or replace self.parser with a different function
     to do something more useful
     """
@@ -508,7 +508,7 @@ class BenderJab(object):
     except Exception, e:
       self.log.error("Fatal Exception " + str(e))
       self.log.debug(traceback.format_exc())
-  
+
     return
 
   def disconnect(self):

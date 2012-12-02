@@ -45,16 +45,16 @@ def connect(profile=None):
   # connection failed
   if connection_type == '':
     raise IOError("unable to connect to" + str(cl.Server))
-  
+
   # try logging in
   if cl.auth(myjid.getNode(),jidparams['password'], 'xsend') is None:
     raise IOError("Couldn't auth:"+str(cl.lastErr))
-  
+
   return cl
-  
+
 def send(tojid, text, profile=None):
   """Quickly send a jabber message tojid
-  
+
   :Parameters:
     - `tojid`: The Jabber ID to send to
     - `text`: a string containing the message to send
@@ -74,7 +74,7 @@ def wait_for_pid(pid, timeout=10):
     pid is the process id to watch
     time out is how long in seconds to wait between polls
     """
-    
+
     while True:
         try:
             os.kill(pid, 0)

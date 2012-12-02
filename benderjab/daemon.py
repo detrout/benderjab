@@ -1,5 +1,4 @@
-
-# Initial version downloaded from 
+# Initial version downloaded from
 # http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/278731
 
 """Disk And Execution MONitor (Daemon)
@@ -8,7 +7,7 @@ Configurable daemon behaviors:
 
    1.) The current working directory set to the "/" directory.
    2.) The current file creation mode mask set to 0.
-   3.) Close all open files (1024). 
+   3.) Close all open files (1024).
    4.) Redirect standard I/O streams to "/dev/null".
 
 A failed call to fork() now raises an exception.
@@ -104,7 +103,7 @@ def createDaemon():
          pid = os.fork()	# Fork a second child.
       except OSError, e:
          raise Exception, "%s [%d]" % (e.strerror, e.errno)
-    
+
       if (pid == 0):	# The second child.
          # Since the current working directory may be a mounted filesystem, we
          # avoid the issue of not being able to unmount the filesystem at
@@ -164,7 +163,7 @@ def closeStdio():
     maxfd = resource.getrlimit(resource.RLIMIT_NOFILE)[1]
     if (maxfd == resource.RLIM_INFINITY):
         maxfd = MAXFD
-  
+
     try:
         # Iterate through and close all file descriptors.
         for fd in reversed(range(maxfd)):
@@ -209,7 +208,7 @@ def readPidFile(filename):
         error = u"IOError reading %s: %s" % (filename, unicode(e))
         print error
     return None
-   
+
 
 def writePidFile(filename):
     """
@@ -218,7 +217,7 @@ def writePidFile(filename):
     if os.path.exists(filename):
         os.remove(filename)
     open(filename,'w').write(str(os.getpid()))
-    
+
 def removePidFile(filename):
     pid = readPidFile(filename)
     if pid is None:
@@ -232,7 +231,7 @@ def removePidFile(filename):
         error = "PID in %s (%d) is not our PID (%s)" % (filename, pid, os.getpid())
         print error
 
-    
+
 
 def checkPidFileIsSafeToRun(filename):
     """
@@ -240,15 +239,15 @@ def checkPidFileIsSafeToRun(filename):
     """
     if os.path.exists(filename):
         pid = readPidFile(filename)
-        
+
         if pid is None:
             # no pid file found, seems safe
             return True
-            
+
         if pid == os.getpid():
             # this is us
             return True
-        
+
         try:
             os.kill(pid, 0)
         except OSError, (code, text):
@@ -262,7 +261,7 @@ def checkPidFileIsSafeToRun(filename):
                 return False
         else:
             print "Another instance seems to be running (pid %d)" %(pid)
-            
+
             return False
     else:
         return True
@@ -275,7 +274,7 @@ if __name__ == "__main__":
    # executed with superuser privileges.  The file will contain the following
    # daemon related process parameters: return code, process ID, parent
    # process group ID, session ID, user ID, effective user ID, real group ID,
-   # and the effective group ID.  Notice the relationship between the daemon's 
+   # and the effective group ID.  Notice the relationship between the daemon's
    # process ID, process group ID, and its parent's process ID.
 
    procParams = """
