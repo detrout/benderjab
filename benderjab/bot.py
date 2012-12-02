@@ -457,16 +457,23 @@ class BenderJab(object):
       # This code provides for a fairly promiscous bot
       # a more secure bot should check an auth list and accept deny
       # based on the incoming who JID
+      sendChat = True
+      if self.jid.bareMatch(who):
+          self.log.info(u"Potential message loop: " + unicode(msg))
+          sendChat = False
+
       if presence_type == "subscribe":
         # Tell the server that we accept their subscription request
         conn.send(xmpp.Presence(to=who, typ='subscribed'))
         # Ask to be their contact too
         conn.send(xmpp.Presence(to=who, typ='subscribe'))
         # Be friendly
-        conn.send(xmpp.Message(who, "hi " + who.getNode(), typ='chat'))
+        if sendChat:
+            conn.send(xmpp.Message(who, "hi " + who.getNode(), typ='chat'))
         self.log.info("%s subscribed" % (who))
       elif presence_type == "unsubscribe":
-        conn.send(xmpp.Message(who, "bye " + who.getNode(), typ='chat'))
+        if sendChat:
+            conn.send(xmpp.Message(who, "bye " + who.getNode(), typ='chat'))
         conn.send(xmpp.Presence(to=who, typ='unsubscribed'))
         conn.send(xmpp.Presence(to=who, typ='unsubscribe'))
         self.log.info("%s unsubscribed" % (who))

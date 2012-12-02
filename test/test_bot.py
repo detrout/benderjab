@@ -103,6 +103,24 @@ class TestBot(unittest.TestCase):
                             users_bad,
                             require_resource=True)
 
+    def test_presence(self):
+        """Make sure presence subscription behaves reasonably
+        """
+        b = bot.BenderJab()
+        b.configure_logging()
+        b.jid = 'bot@example.org'
+        b.cl = MockClient()
+        who = 'someone@example.org'
+
+        b.presenceCB(b.cl, xmpp.Presence(to=b.jid, frm=who, typ='subscribe'))
+        self.assertTrue(b.cl.msgs)
+
+        b.cl = MockClient()
+        b.presenceCB(b.cl, xmpp.Presence(to=b.jid, frm=b.jid, typ='subscribe'))
+        self.assertTrue(isinstance(b.cl.msgs[-1], xmpp.protocol.Presence))
+
+
+
 
 def suite():
     return unittest.makeSuite(TestBot)
