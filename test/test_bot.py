@@ -69,6 +69,7 @@ class TestBot(unittest.TestCase):
 
     def test_authorized_message(self):
         b = bot.BenderJab()
+        b.jid = "bot@example.org"
         user_list = "user1@example.fake other@fake.example"
         b.authorized_users = b._parse_user_list(user_list)
         b.cl = MockClient()
@@ -107,8 +108,8 @@ class TestBot(unittest.TestCase):
         """Make sure presence subscription behaves reasonably
         """
         b = bot.BenderJab()
-        b.configure_logging()
         b.jid = 'bot@example.org'
+        b.configure_logging()
         b.cl = MockClient()
         who = 'someone@example.org'
 

@@ -101,6 +101,8 @@ class BenderJab(object):
       log_format = '%(asctime)s %(name)-6s %(levelname)-8s %(message)s'
       formatter = logging.Formatter(log_format)
 
+      if not self.jid:
+          raise RuntimeError("Please configure a JID before starting logging")
       self.log = logging.getLogger(self.jid.getStripped())
       self.log.setLevel(self.loglevel)
 
