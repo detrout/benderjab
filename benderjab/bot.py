@@ -24,6 +24,7 @@ import xmpp
 
 from benderjab import util
 from benderjab import daemon
+from benderjab.exceptions import BenderJabBaseError
 
 MAILTO_PROTO = 'mailto:'
 JABBER_PROTO = 'jabber:'
@@ -425,6 +426,8 @@ class BenderJab(object):
         try:
             self.log.debug(u"FROM: <%s> " % (unicode(who)) + unicode(body))
             reply = self.parser(body, who)
+        except BenderJabBaseError as e:
+            reply = unicode(e)
         except Exception as e:
             reply = u"Exception: " + unicode(e)
             self.log.error(u"Exception in messageCB. "+unicode(e))
