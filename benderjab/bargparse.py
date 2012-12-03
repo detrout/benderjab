@@ -52,12 +52,11 @@ class BotArgumentParser(ArgumentParser):
 
     def error(self, message):
         usage = self.format_usage() + '\n%s' % (message,)
-        raise BotUsageError(usage)
-
+        raise BotUsageException(usage)
 
     def parse_known_args(self, args=None, namespace=None):
         if args is None:
-            raise BotUsageError("No commands to process")
+            raise BotUsageExceptions("No commands to process")
         else:
             args = list(args)
 
