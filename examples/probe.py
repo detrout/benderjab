@@ -71,6 +71,8 @@ def echo(args):
 def roll(args):
     if args.dice:
         return dice(' '.join(args.dice))
+    parser = getattr(roll, SUBPARSER)
+    return parser.format_usage()
 
 if __name__ == "__main__":
     bot.main()
