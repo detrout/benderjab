@@ -9,6 +9,8 @@ from benderjab import bot
 from benderjab.util import get_config
 from benderjab.bargparse import BotArgumentParser
 
+from dice2 import dice
+
 SUBPARSER = 'subparser'
 
 class ProbeBot(bot.BenderJab):
@@ -42,6 +44,7 @@ class ProbeBot(bot.BenderJab):
         def wrapper(func):
             if not hasattr(func, SUBPARSER):
                 func.subparser = self.subparsers.add_parser(name)
+                func.subparser.prog = name
                 func.subparser.set_defaults(func=func)
             return func
         return wrapper
@@ -61,6 +64,13 @@ def echo(args):
     if args.strings:
         return u'You sent:'+u' '.join((unicode(s) for s in args.strings))
     return u'Nothing! You sent Nothing!'
+
+@bot.argument('dice', nargs='*', type=str,
+              help='Specify a die formula. e.g. 2d4 + 2')
+@bot.command('roll')
+def roll(args):
+    if args.dice:
+        return dice(' '.join(args.dice))
 
 if __name__ == "__main__":
     bot.main()
