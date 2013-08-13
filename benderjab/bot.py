@@ -298,7 +298,6 @@ class BenderJab(object):
       """
       Things to do when detaching from the terminal
       """
-
       print 'detaching from console'
       daemon.createDaemon()
 
