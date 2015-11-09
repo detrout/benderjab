@@ -58,10 +58,10 @@ class AimlBot(object):
     """start a simple test read eval loop"""
     try:
       while True:
-         line = raw_input("> ")
-         print self.respond(line, name)
+         line = input("> ")
+         print(self.respond(line, name))
     except (EOFError, KeyboardInterrupt), e:
-      print "[END OF LINE]"
+      print("[END OF LINE]")
 
   def respond(self, line, name=None):
     """

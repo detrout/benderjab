@@ -32,7 +32,7 @@ def remindme(message, who):
   seconds = int(message[mo.start():mo.end()])
   msg = message[mo.end()+1:]
   
-  print msg
+  print(msg)
   __message_list.append(TimeDelayMessage(msg, who, seconds))
   
   return "I will remind you in %s seconds." % (seconds)
@@ -61,16 +61,16 @@ def handle_delayed_messages(bot):
   
   # Don't do anything if we don't need to.
   if len(__message_list) == 0:
-    print 'Delay: Nothing to do.'
+    print('Delay: Nothing to do.')
     return
   
   # Get list of messages that need to be sent.
   cur_dt = datetime.datetime.now()
   to_process_list = [ msg for msg in __message_list if (msg.delta - cur_dt).days < 0 ]
   for msg in __message_list:
-    print '%s - %s = %s' % (msg.delta, cur_dt, (msg.delta - cur_dt).seconds)
+    print('%s - %s = %s' % (msg.delta, cur_dt, (msg.delta - cur_dt).seconds))
   
-  print 'Delay: Found %s message to process.' % (len(to_process_list))
+  print('Delay: Found %s message to process.' % (len(to_process_list)))
   # Nothing to do yet.
   if len(to_process_list) == 0:
     return
@@ -79,8 +79,8 @@ def handle_delayed_messages(bot):
   for msg in to_process_list:
     __message_list.remove(msg)
     #Send message
-    print 'Delay: Sending message to %s: %s' % (msg.who, msg.message)
-    print 'preping: %s' % (msg.message)
+    print('Delay: Sending message to %s: %s' % (msg.who, msg.message))
+    print('preping: %s' % (msg.message))
     bot.cl.send(xmpp.Message(msg.who, "Reminder:" + msg.message[0], typ="chat"))
   
   

@@ -202,11 +202,11 @@ def readPidFile(filename):
     try:
         return int(open(filename).read().strip())
     except ValueError:
-        error = u"pidfile %s doesn't contain a pid" % (filename)
-        print error
+        error = "pidfile %s doesn't contain a pid" % (filename)
+        print(error)
     except IOError, e:
-        error = u"IOError reading %s: %s" % (filename, unicode(e))
-        print error
+        error = "IOError reading %s: %s" % (filename, str(e))
+        print(error)
     return None
 
 
@@ -229,7 +229,7 @@ def removePidFile(filename):
     else:
         # its not our pid
         error = "PID in %s (%d) is not our PID (%s)" % (filename, pid, os.getpid())
-        print error
+        print(error)
 
 
 
@@ -257,10 +257,10 @@ def checkPidFileIsSafeToRun(filename):
                 return True
             else:
                 error = "failed checking status of pid %d in file %s" % (pid, filename)
-                print error
+                print(error)
                 return False
         else:
-            print "Another instance seems to be running (pid %d)" %(pid)
+            print("Another instance seems to be running (pid %d)" %(pid))
 
             return False
     else:

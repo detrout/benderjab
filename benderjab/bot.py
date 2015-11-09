@@ -298,7 +298,7 @@ class BenderJab(object):
       """
       Things to do when detaching from the terminal
       """
-      print 'detaching from console'
+      print('detaching from console')
       daemon.createDaemon()
 
   def start(self, daemonize):
@@ -334,11 +334,11 @@ class BenderJab(object):
           except OSError, (code, text):
               if code == errno.ESRCH:
                   errmsg = "PID %d isn't running" % (pid)
-                  print errmsg
+                  print(errmsg)
       else:
           msg = "No pidfile at %s, assuming nothing is running"
           msg %= (self.pid_filename,)
-          print >>sys.stderr, msg
+          print(msg, file=sys.stderr)
           if self.log is not None:
               self.log.info(msg % (self.pid_filename))
 

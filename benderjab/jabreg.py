@@ -23,7 +23,7 @@ def connect(jid):
   cl = xmpp.Client(jid.getDomain(), debug=[])
   cl.connect(use_srv=False)
   if cl.isConnected() is None:
-    print cl.lastErr
+    print(cl.lastErr)
     raise RuntimeError("Unable to connect to server" + jid.getDomain())
   return cl
 
@@ -96,7 +96,7 @@ def test_logon(jid):
   cl = connect(jid)
 
   if cl.auth(jid.getNode(), password, "testing") is None:
-    print "Couldn't authenticate", cl.lastErr
+    print("Couldn't authenticate", cl.lastErr)
 
   cl.sendInitPresence()
   return cl
@@ -129,13 +129,13 @@ def main(argv=None):
   opt, arguments = parser.parse_args(argv)
 
   if opt.register_jid is not None:
-    if opt.verbose: print "register", opt.register_jid
+    if opt.verbose: print("register", opt.register_jid)
     register(opt.register_jid, opt.email)
   if opt.unregister_jid is not None:
-    if opt.verbose: print "unregister", opt.unregister_jid
+    if opt.verbose: print("unregister", opt.unregister_jid)
     unregister(opt.unregister_jid)
   if opt.test_jid is not None:
-    if opt.verbose: print "test", opt.test_jid
+    if opt.verbose: print("test", opt.test_jid)
     test_logon(opt.test_jid)
 
   return 0

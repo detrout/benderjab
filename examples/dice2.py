@@ -35,9 +35,9 @@ expr = operatorPrecedence( atom,
 
 from random import randint
 def roll(dieStr):
-    count,sides = map(int,dieStr.split("d"))
+    count,sides = list(map(int,dieStr.split("d")))
     ret = [ randint(1,sides) for _ in range(count) ]
-    print "Rolling", dieStr, "->", ret  # debugging statement, comment out to disable
+    print("Rolling", dieStr, "->", ret)  # debugging statement, comment out to disable
     return ret
 
 def evalAtom(a):

@@ -24,7 +24,7 @@ class ProbeBot(bot.BenderJab):
 
     def logon(self, jid=None, password=None, resource=None):
         super(ProbeBot, self).logon(jid, password, resource)
-        print "registering"
+        print("registering")
         self.cl.RegisterHandler('iq', self.iqCB)
 
 
@@ -53,7 +53,7 @@ class ProbeBot(bot.BenderJab):
         if message:
             cmdline = shlex.split(message)
             args = self.argparse.parse_args(cmdline)
-            print "args", args
+            print("args", args)
             args.frm = who
             if args.func:
                 return args.func(args)
@@ -123,7 +123,7 @@ def disco_info(args):
     if args.node:
         q.setTagAttr('query', 'node', args.node[0])
     tree = fromstring(str(q))
-    print "--disco-info--"
+    print("--disco-info--")
     dump(tree)
     args.bot.cl.send(q)
     return u"Sent info query"

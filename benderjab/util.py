@@ -40,7 +40,7 @@ def get_checked_password(jid, password=None):
       if password == password2:
         ok = True
       else:
-        print "password mismatch, try again"
+        print("password mismatch, try again")
   return password
 
 def get_password(jid, password=None):
@@ -74,7 +74,7 @@ def get_config(profile=None, filename='~/.benderjab'):
       # make a default file and exit
       config = ConfigParser.RawConfigParser(default)
       config.write(open(config_file,'w'))
-      print "Please edit",filename,"to include a valid JID for sending messages"
+      print("Please edit",filename,"to include a valid JID for sending messages")
       return None
     else:
       config.read(config_file)
@@ -97,7 +97,7 @@ def get_config(profile=None, filename='~/.benderjab'):
       params.update( dict(config.items(profile)) )
 
   if params == default:
-    print "Please edit",filename,"to include a valid JID for sending messages"
+    print("Please edit",filename,"to include a valid JID for sending messages")
     return None
 
   return params
