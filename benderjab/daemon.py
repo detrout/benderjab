@@ -53,8 +53,8 @@ def createDaemon():
       # and inherits the parent's process group ID.  This step is required
       # to insure that the next call to os.setsid is successful.
       pid = os.fork()
-   except OSError, e:
-      raise Exception, "%s [%d]" % (e.strerror, e.errno)
+   except OSError as e:
+      raise Exception("%s [%d]" % (e.strerror, e.errno))
 
    if (pid == 0):	# The first child.
       # To become the session leader of this new session and the process group
@@ -101,8 +101,8 @@ def createDaemon():
          # longer a session leader, preventing the daemon from ever acquiring
          # a controlling terminal.
          pid = os.fork()	# Fork a second child.
-      except OSError, e:
-         raise Exception, "%s [%d]" % (e.strerror, e.errno)
+      except OSError as e:
+         raise Exception("%s [%d]" % (e.strerror, e.errno))
 
       if (pid == 0):	# The second child.
          # Since the current working directory may be a mounted filesystem, we
@@ -169,7 +169,7 @@ def closeStdio():
         for fd in reversed(range(maxfd)):
             try:
                 os.close(fd)
-            except OSError, e:	# ERROR, fd wasn't open to begin with (ignored)
+            except OSError as e:	# ERROR, fd wasn't open to begin with (ignored)
                 if e.errno == errno.EBADF:
                     # File descrptor was not open
                     pass
@@ -189,7 +189,7 @@ def closeStdio():
         os.dup2(daemon_fd, sys.stdin.fileno())			# standard output (1)
         os.dup2(daemon_fd, sys.stdout.fileno())			# standard output (1)
         os.dup2(daemon_fd, sys.stderr.fileno())			# standard error (2)
-    except NotImplementedError, e:
+    except NotImplementedError as e:
         panic = open('paniclog.log', 'w+')
         panic.write(unicode(e))
         raise e
@@ -204,7 +204,7 @@ def readPidFile(filename):
     except ValueError:
         error = "pidfile %s doesn't contain a pid" % (filename)
         print(error)
-    except IOError, e:
+    except IOError as e:
         error = "IOError reading %s: %s" % (filename, str(e))
         print(error)
     return None
@@ -250,7 +250,8 @@ def checkPidFileIsSafeToRun(filename):
 
         try:
             os.kill(pid, 0)
-        except OSError, (code, text):
+        except OSError as xxx_todo_changeme:
+            (code, text) = xxx_todo_changeme.args
             if code == errno.ESRCH:
                 # pidfile is stale
                 os.remove(filename)

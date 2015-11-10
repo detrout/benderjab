@@ -33,7 +33,7 @@ class SysmonBot(BenderJab):
                 reply = ''
             else:
                 reply = "Unknown command", message
-        except Exception, e:
+        except Exception as e:
             return "failed:"+str(e)
 
         return reply

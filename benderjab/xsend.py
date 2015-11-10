@@ -78,7 +78,7 @@ def wait_for_pid(pid, timeout=10):
     while True:
         try:
             os.kill(pid, 0)
-        except OSError, e:
+        except OSError as e:
             # there is no PID, return
             return
         time.sleep(timeout)

@@ -331,7 +331,8 @@ class BenderJab(object):
 
           try:
               os.kill(pid, signal.SIGTERM)
-          except OSError, (code, text):
+          except OSError as xxx_todo_changeme:
+              (code, text) = xxx_todo_changeme.args
               if code == errno.ESRCH:
                   errmsg = "PID %d isn't running" % (pid)
                   print(errmsg)
@@ -482,7 +483,7 @@ class BenderJab(object):
         conn.send(xmpp.Presence(to=who, typ='unsubscribed'))
         conn.send(xmpp.Presence(to=who, typ='unsubscribe'))
         self.log.info("%s unsubscribed" % (who))
-    except Exception, e:
+    except Exception as e:
       self.log.error("Exception in presenceCB " + str(e))
       self.log.debug(traceback.format_exc())
 
@@ -517,7 +518,7 @@ class BenderJab(object):
                 tnow = time.time()
                 timeout -= (tnow - tstart)
                 tstart = tnow
-    except Exception, e:
+    except Exception as e:
       self.log.error("Fatal Exception " + str(e))
       self.log.debug(traceback.format_exc())
 

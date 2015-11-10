@@ -16,7 +16,7 @@ def parser(s, who=None):
   try:
     if re.match("roll", s):
       return dice2.dice(s[4:])
-  except Exception, e:
+  except Exception as e:
     return "failed:"+str(e)
 
 def loop_reporter():

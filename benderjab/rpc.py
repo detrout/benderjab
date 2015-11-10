@@ -175,7 +175,7 @@ class XmlRpcBot(BenderJab, SimpleXMLRPCDispatcher):
                 response = self._marshaled_dispatch(body)
                 response_iq = make_iq(who, 'result', response, msgid)
             c = conn.send(response_iq)
-        except RuntimeError,e:
+        except RuntimeError as e:
             self.log.error("Exception in bot_dispatcher"+str(e))
             # really should send an error back to the sender
         raise xmpp.NodeProcessed

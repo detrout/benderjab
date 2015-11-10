@@ -60,7 +60,7 @@ class AimlBot(object):
       while True:
          line = input("> ")
          print(self.respond(line, name))
-    except (EOFError, KeyboardInterrupt), e:
+    except (EOFError, KeyboardInterrupt) as e:
       print("[END OF LINE]")
 
   def respond(self, line, name=None):
