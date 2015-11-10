@@ -1,6 +1,6 @@
 """Error messages handled specially by benderjab
 """
-import exceptions
+from . import exceptions
 
 __all__ = ['BenderJabBaseError',
            'BotUsageException',

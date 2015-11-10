@@ -15,7 +15,7 @@ import sys
 import types
 
 import xmpp
-from util import get_checked_password, get_password, toJID
+from .util import get_checked_password, get_password, toJID
 
 def connect(jid):
   """Connect to jabber server for the specified JID
