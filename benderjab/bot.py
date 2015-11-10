@@ -141,7 +141,7 @@ class BenderJab(object):
     return parsed_list
 
   def _parse_address(self, address):
-      if type(address) in types.StringTypes:
+      if type(address) in str:
           if address.startswith(MAILTO_PROTO):
               return MAILTO_PROTO, address[len(MAILTO_PROTO):]
           elif address.startswith(JABBER_PROTO):
@@ -151,7 +151,7 @@ class BenderJab(object):
       elif isinstance(address, xmpp.JID):
           return JABBER_PROTO, address
       else:
-          self.log.error(u"Unrecognized address %s" % (unicode(address)))
+          self.log.error("Unrecognized address %s" % (str(address)))
           return None, None
 
 
@@ -372,7 +372,7 @@ class BenderJab(object):
     auth_state = self.cl.auth(jid.getNode(), self.cfg['password'], self.cfg['resource'])
     if auth_state is None:
       # auth failed
-      self.log.error(u"couldn't authenticate with"+unicode(self.jid))
+      self.log.error("couldn't authenticate with"+str(self.jid))
       # probably want a better exception here
       raise RuntimeError(self.cl.lastErr)
 
@@ -392,10 +392,10 @@ class BenderJab(object):
       """
 
       address_type, address = self._parse_address(address)
-      body = unicode(message)
+      body = str(message)
 
       if address_type == JABBER_PROTO:
-          self.log.debug(u"IMing: <%s> %s" % (unicode(address),body))
+          self.log.debug("IMing: <%s> %s" % (str(address),body))
           self.cl.send(xmpp.protocol.Message(address,typ='chat',body=body))
       elif address_type == MAILTO_PROTO:
           self._send_email(address, body)
@@ -408,7 +408,7 @@ class BenderJab(object):
       msg['Subject'] = body
       msg['From'] = self.jid
       msg['To'] = address
-      self.log.debug(u"EMAILing: <%s> %s" % (unicode(address), msg.as_string()))
+      self.log.debug("EMAILing: <%s> %s" % (str(address), msg.as_string()))
       s = smtplib.SMTP('localhost',2525)
       s.sendmail(self.jid, [address], msg.as_string())
       s.quit()
@@ -424,16 +424,16 @@ class BenderJab(object):
         return None
     elif self.check_authorization(who):
         try:
-            self.log.debug(u"FROM: <%s> " % (unicode(who)) + unicode(body))
+            self.log.debug("FROM: <%s> " % (str(who)) + str(body))
             reply = self.parser(body, who)
         except BenderJabBaseError as e:
-            reply = unicode(e)
+            reply = str(e)
         except Exception as e:
-            reply = u"Exception: " + unicode(e)
-            self.log.error(u"Exception in messageCB. "+unicode(e))
+            reply = "Exception: " + str(e)
+            self.log.error("Exception in messageCB. "+str(e))
             self.log.debug(traceback.format_exc())
     else:
-        reply = u"Authorization Error."
+        reply = "Authorization Error."
 
     self.send(who, reply)
 
@@ -465,7 +465,7 @@ class BenderJab(object):
       # based on the incoming who JID
       sendChat = True
       if self.jid.bareMatch(who):
-          self.log.info(u"Potential message loop: " + unicode(msg))
+          self.log.info("Potential message loop: " + str(msg))
           sendChat = False
 
       if presence_type == "subscribe":

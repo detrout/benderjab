@@ -191,7 +191,7 @@ def closeStdio():
         os.dup2(daemon_fd, sys.stderr.fileno())			# standard error (2)
     except NotImplementedError as e:
         panic = open('paniclog.log', 'w+')
-        panic.write(unicode(e))
+        panic.write(str(e))
         raise e
 
 def readPidFile(filename):

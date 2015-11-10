@@ -29,21 +29,21 @@ class ProbeBot(bot.BenderJab):
 
 
     def list_commands(self, arg):
-        return u"Available commands: " + ", ".join(self.commands.keys())
+        return "Available commands: " + ", ".join(list(self.commands.keys()))
 
     def messageCB(self, conn, msg):
-        tree = fromstring(unicode(msg))
+        tree = fromstring(str(msg))
         dump(tree)
         return super(ProbeBot, self).messageCB(conn, msg)
 
     def presenceCB(self, conn, msg):
-        tree = fromstring(unicode(msg))
+        tree = fromstring(str(msg))
         dump(tree)
         return super(ProbeBot, self).presenceCB(conn, msg)
 
     def iqCB(self, dis, stanza):
         #print "dis:", unicode(dis)
-        tree = fromstring(unicode(stanza))
+        tree = fromstring(str(stanza))
         dump(tree)
 
     def format_help(self, args):
@@ -57,7 +57,7 @@ class ProbeBot(bot.BenderJab):
             args.frm = who
             if args.func:
                 return args.func(args)
-            return u"Didn't understand:" + unicode(message)
+            return "Didn't understand:" + str(message)
 
     def command(self, name, **kwargs):
         def wrapper(func):
@@ -82,8 +82,8 @@ bot = ProbeBot()
 @bot.command('echo', help="return your message")
 def echo(args):
     if args.strings:
-        return u'You sent:'+u' '.join((unicode(s) for s in args.strings))
-    return u'Nothing! You sent Nothing!'
+        return 'You sent:'+' '.join((str(s) for s in args.strings))
+    return 'Nothing! You sent Nothing!'
 
 @bot.argument('dice', nargs='*', type=str,
               help='Specify a die formula. e.g. 2d4 + 2')
@@ -107,7 +107,7 @@ def disco_info(args):
     if args.node:
         q.setTagAttr('query', 'node', args.node[0])
     args.bot.cl.send(q)
-    return u"Sent items query"
+    return "Sent items query"
 
 @bot.argument('-w', '--who', help="specify JID to query")
 @bot.argument('--node', nargs=1, help="specify a node attribute")
@@ -126,7 +126,7 @@ def disco_info(args):
     print("--disco-info--")
     dump(tree)
     args.bot.cl.send(q)
-    return u"Sent info query"
+    return "Sent info query"
 
 @bot.command('form', help="send me a form")
 def form(args):
@@ -149,7 +149,7 @@ def form(args):
     print "--form--"
     dump(tree)
     args.bot.cl.send(f)
-    return u"I hope you like it"
+    return "I hope you like it"
 
 @bot.command('who', help="list who is online")
 def who(args):
@@ -158,11 +158,11 @@ def who(args):
     for jid in roster.keys():
         resources = roster.getResources(jid)
         if resources:
-            reply.append(unicode(jid))
+            reply.append(str(jid))
             for resource in resources:
-                reply.append(unicode(u'\t'+jid+'/'+resource))
+                reply.append(str('\t'+jid+'/'+resource))
 
-    return u"\n".join(reply)
+    return "\n".join(reply)
 
 
 if __name__ == "__main__":

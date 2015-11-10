@@ -77,7 +77,7 @@ class TestBot(unittest.TestCase):
 
         fromjid = util.toJID('user1@example.fake')
         tojid = util.toJID('random_user@example.fake')
-        body = u"test message"
+        body = "test message"
         msg=xmpp.protocol.Message(tojid,body=body,typ='chat', frm=fromjid)
         b.messageCB(b.cl, msg)
         response = b.cl.msgs[-1].getBody()

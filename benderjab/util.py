@@ -19,7 +19,7 @@ def toJID(jid):
   :Parameters:
     - `jid`: something that looks like a jabber id
   """
-  if type(jid) in types.StringTypes:
+  if type(jid) in str:
     return xmpp.protocol.JID(jid)
   else:
     return jid
@@ -31,7 +31,7 @@ def get_checked_password(jid, password=None):
   :Parameters:
     - `prompt`: the string to display to the user
   """
-  prompt = u"Password for ["+ unicode(jid) +"]:"
+  prompt = "Password for ["+ str(jid) +"]:"
   if password is None:
     ok = False
     while not ok:
@@ -53,7 +53,7 @@ def get_password(jid, password=None):
                   we wont do anything.
   """
   if password is None:
-    prompt = u"Password for ["+ unicode(jid) +"]:"
+    prompt = "Password for ["+ str(jid) +"]:"
     password = getpass(prompt)
   return password
 
@@ -68,7 +68,7 @@ def get_config(profile=None, filename='~/.benderjab'):
   default={'jid':'romeo@montague.net','password':'juliet'}
   config = ConfigParser.RawConfigParser()
 
-  if type(filename) in types.StringTypes:
+  if type(filename) in str:
     config_file = os.path.expanduser(filename)
     if not os.access(config_file,os.R_OK):
       # make a default file and exit

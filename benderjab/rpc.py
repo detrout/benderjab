@@ -54,12 +54,12 @@ def extract_iq(iq):
     """
     children = iq.getChildren()
     if len(children) < 1:
-        errmsg = u"Iq didn't have a body to extract"
-        logging.debug(errmsg + u": " + unicode(iq))
+        errmsg = "Iq didn't have a body to extract"
+        logging.debug(errmsg + ": " + str(iq))
         raise XmlRpcProtocolError(errmsg)
     elif len(children) > 1:
-        errmsg = u"Too many child nodes"
-        logging.debug(errmsg + u": " + unicode(iq))
+        errmsg = "Too many child nodes"
+        logging.debug(errmsg + ": " + str(iq))
         raise XmlRpcProtocolError(errmsg)
     else:
         return str(children[0])
