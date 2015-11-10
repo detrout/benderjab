@@ -3,7 +3,7 @@
 # Copyright 2007 Diane Trout
 # This software is covered by the GNU Lesser Public License 2.1
 #
-import commands
+import subprocess
 import errno
 from email.mime.text import MIMEText
 import smtplib
@@ -448,7 +448,7 @@ class BenderJab(object):
     elif re.match("time", message):
       reply = "Server time is "+time.asctime()
     elif re.match("uptime", message):
-      reply = commands.getoutput("uptime")
+      reply = subprocess.getoutput("uptime")
     elif re.match("Exception:", message):
       self.log.warning("Received Exception: " + message)
       reply = None
