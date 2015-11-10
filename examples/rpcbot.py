@@ -5,6 +5,7 @@ import re
 import sys
 from benderjab import rpc
 from benderjab.util import get_config
+from functools import reduce
 
 #
 # You can use this bot by doing:
