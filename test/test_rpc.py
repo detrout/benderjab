@@ -1,8 +1,8 @@
 import socket
 import types
 import unittest
-from StringIO import StringIO
-import xmlrpclib
+from io import StringIO
+import xmlrpc.client
 
 from benderjab import rpc
 import xmpp
@@ -18,12 +18,12 @@ class fake_conn(object):
 class TestRPC(unittest.TestCase):
     def test_xmlrpc_pack_unpack(self):
         params = (1,2,['a','b'])
-        marshaled = xmlrpclib.dumps(params)
+        marshaled = xmlrpc.client.dumps(params)
         tojid = 'test@test.org'
         typ = 'set'
         iq = rpc.make_iq(tojid, typ, marshaled, msgid=None)
         return_xml = rpc.extract_iq(iq)
-        unmarshaled = xmlrpclib.loads(return_xml)
+        unmarshaled = xmlrpc.client.loads(return_xml)
         # loads returns (params, methodname)
         self.failUnlessEqual(unmarshaled[0], params)
 
@@ -50,13 +50,13 @@ class TestRPC(unittest.TestCase):
        def add(x, y):
          return x+y
        bot.register_function(add)
-       params = xmlrpclib.dumps((1,2),'add')
+       params = xmlrpc.client.dumps((1,2),'add')
        msg = rpc.make_iq('test@test.fake', 'set', params)
        conn = fake_conn()
        self.failUnlessRaises(xmpp.NodeProcessed, bot.bot_dispatcher, conn, msg)
        self.failUnless(len(conn.messages) == 1)
        result_xml = rpc.extract_iq(conn.messages[0])
-       result_tuple = xmlrpclib.loads(result_xml)
+       result_tuple = xmlrpc.client.loads(result_xml)
        result = result_tuple[0][0]
        self.failUnlessEqual(3, result)
 

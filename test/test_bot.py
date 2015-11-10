@@ -5,7 +5,7 @@ from StringIO import StringIO
 
 from benderjab import bot
 from benderjab import util
-import xmlrpclib
+import xmlrpc.client
 
 import xmpp
 

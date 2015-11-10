@@ -9,8 +9,8 @@ messages sent with xmlrc_send. For that xmlrpc_extract_iq will unpack
 the jabber message and return the xml-rpc (args, methodname) tuple
 """
 import logging
-import xmlrpclib
-from SimpleXMLRPCServer import SimpleXMLRPCDispatcher
+import xmlrpc.client
+from xmlrpc.server import SimpleXMLRPCDispatcher
 import sys
 
 import xmpp
@@ -79,7 +79,7 @@ def send(conn, tojid, params, methodname=None, encoding=None):
 
     JEP-009 http://www.xmpp.org/extensions/xep-0009.html
     """
-    call_xml = xmlrpclib.dumps(params, methodname, encoding)
+    call_xml = xmlrpc.client.dumps(params, methodname, encoding)
 
     iq = make_iq(tojid, 'set', call_xml)
     msg_id = conn.send(iq)
@@ -98,7 +98,7 @@ def receive(conn, msgid, timeout=25):
         raise XmlRpcReceiveTimeout("message %s timed out" %(str(id)))
 
     body = extract_iq(msg)
-    return xmlrpclib.loads(body)
+    return xmlrpc.client.loads(body)
 
 def call(conn, tojid, params, methodname=None, encoding=None):
     msgid = send(conn,tojid, params, methodname, encoding)
