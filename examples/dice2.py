@@ -6,7 +6,7 @@ def convertNums(s):
     except ValueError:
         return float(s[0])
 
-LPAR,RPAR,POINT,COMMA = map(Suppress,"().,")
+LPAR,RPAR,POINT,COMMA = list(map(Suppress,"().,"))
 fnumber = Combine(Word(nums) + Optional("." + Optional(Word(nums))))
 fnumber.setParseAction( convertNums )
 

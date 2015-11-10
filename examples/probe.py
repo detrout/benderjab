@@ -155,7 +155,7 @@ def form(args):
 def who(args):
     roster = args.bot.cl.getRoster()
     reply = []
-    for jid in roster.keys():
+    for jid in list(roster.keys()):
         resources = roster.getResources(jid)
         if resources:
             reply.append(str(jid))

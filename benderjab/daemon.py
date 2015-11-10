@@ -166,7 +166,7 @@ def closeStdio():
 
     try:
         # Iterate through and close all file descriptors.
-        for fd in reversed(range(maxfd)):
+        for fd in reversed(list(range(maxfd))):
             try:
                 os.close(fd)
             except OSError as e:	# ERROR, fd wasn't open to begin with (ignored)
