@@ -1,7 +1,7 @@
 import socket
 import types
 import unittest
-from StringIO import StringIO
+from io import StringIO
 
 from benderjab import bot
 from benderjab import util
