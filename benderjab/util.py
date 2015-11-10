@@ -2,7 +2,7 @@
 # Copyright 2007 Diane Trout
 # This software is covered by the GNU Lesser Public License 2.1
 #
-import ConfigParser
+import configparser
 from getpass import getpass
 import os
 import socket
@@ -66,13 +66,13 @@ def get_config(profile=None, filename='~/.benderjab'):
     - `profile`: which section of the config file to return
   """
   default={'jid':'romeo@montague.net','password':'juliet'}
-  config = ConfigParser.RawConfigParser()
+  config = configparser.RawConfigParser()
 
   if type(filename) in str:
     config_file = os.path.expanduser(filename)
     if not os.access(config_file,os.R_OK):
       # make a default file and exit
-      config = ConfigParser.RawConfigParser(default)
+      config = configparser.RawConfigParser(default)
       config.write(open(config_file,'w'))
       print("Please edit",filename,"to include a valid JID for sending messages")
       return None
