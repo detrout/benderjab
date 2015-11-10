@@ -146,7 +146,7 @@ def form(args):
         payload=[xmpp.simplexml.XML2Node('<body>Form attached</body>'),
                  xmpp.simplexml.XML2Node(form)])
     tree = fromstring(str(f))
-    print "--form--"
+    print("--form--")
     dump(tree)
     args.bot.cl.send(f)
     return "I hope you like it"

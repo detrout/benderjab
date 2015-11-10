@@ -20,7 +20,7 @@ def parser(s, who=None):
     return "failed:"+str(e)
 
 def loop_reporter():
-  print "."
+  print(".")
 
 def main():
   bot = BenderJab('bender@ghic.org')
